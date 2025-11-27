@@ -39,7 +39,14 @@ ENV PYTHONPATH=/app
 # Создание директорий для данных (если их нет)
 RUN mkdir -p /app/src/knowledge/data/images \
     /app/src/knowledge/data/structured \
-    /app/data
+    /app/data \
+    /tmp \
+    /app/.cache
+
+# Установка переменных окружения для кэша моделей faster-whisper
+ENV HF_HOME=/app/.cache/huggingface
+ENV XDG_CACHE_HOME=/app/.cache
+ENV TMPDIR=/tmp
 
 # Опционально: сборка базы знаний при сборке образа
 # Раскомментируйте следующую строку, если хотите собирать БЗ при билде

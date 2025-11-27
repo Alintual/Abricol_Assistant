@@ -3154,13 +3154,20 @@ async def handle_voice_message(message: Message, state: FSMContext) -> None:
 
     temp_path: str | None = None
     try:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".oga") as tmp:
+        # Используем /tmp в Docker контейнере, если доступен, иначе системную временную директорию
+        temp_dir = os.getenv("TMPDIR", os.getenv("TEMP", tempfile.gettempdir()))
+        # Создаем директорию, если её нет
+        os.makedirs(temp_dir, exist_ok=True)
+        
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".oga", dir=temp_dir) as tmp:
             await message.bot.download(message.voice, destination=tmp.name)
             temp_path = tmp.name
 
+        logger.info(f"Начало транскрибации голосового файла: {temp_path}")
         transcript = await transcribe_file(temp_path)
+        logger.info(f"Транскрибация завершена успешно")
     except ImportError as e:
-        logger.error(f"STT недоступно: {e}")
+        logger.error(f"STT недоступно: {e}", exc_info=True)
         # Удаляем стикер ожидания при ошибке
         if waiting_sticker_message:
             try:
@@ -3173,6 +3180,8 @@ async def handle_voice_message(message: Message, state: FSMContext) -> None:
         return
     except Exception as e:
         logger.error(f"Ошибка транскрибации голосового сообщения: {e}", exc_info=True)
+        logger.error(f"Путь к временному файлу: {temp_path}, существует: {os.path.exists(temp_path) if temp_path else 'N/A'}")
+        logger.error(f"TMPDIR: {os.getenv('TMPDIR')}, TEMP: {os.getenv('TEMP')}, tempfile.gettempdir(): {tempfile.gettempdir()}")
         await _answer_with_sticker_cleanup(message, "Не удалось распознать голос. Попробуйте ещё раз или задайте вопрос текстом.", waiting_sticker_message)
         return
     finally:

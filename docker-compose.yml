@@ -14,6 +14,10 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - PYTHONPATH=/app
+      # Переменные для кэша моделей faster-whisper
+      - HF_HOME=/app/.cache/huggingface
+      - XDG_CACHE_HOME=/app/.cache
+      - TMPDIR=/tmp
     
     # Монтирование томов для сохранения данных
     volumes:
@@ -27,6 +31,9 @@ services:
       - ./src/knowledge/data:/app/src/knowledge/data
       # Логи (опционально)
       - ./bot.log:/app/bot.log
+      # Кэш моделей faster-whisper (для ускорения последующих запусков)
+      - ./cache/models:/app/.cache/huggingface
+      # Временные файлы (создается автоматически в контейнере)
     
     # Сеть (если нужна)
     networks:
