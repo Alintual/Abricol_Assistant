@@ -3241,11 +3241,7 @@ async def handle_intent_selection(callback: CallbackQuery, state: FSMContext) ->
     user_id = callback.from_user.id
     intent_type = callback.data.split(":")[1] if ":" in callback.data else ""
     
-    # Удаляем сообщение с окном выбора
-    try:
-        await callback.message.delete()
-    except Exception as e:
-        logger.warning(f"Не удалось удалить сообщение: {e}")
+    # Оставляем сообщение с окном выбора в чате (не удаляем)
     
     try:
         if intent_type == "training":
@@ -3486,11 +3482,7 @@ async def handle_phase4_button(callback: CallbackQuery, state: FSMContext) -> No
     user_id = callback.from_user.id
     button_type = callback.data.split(":")[1] if ":" in callback.data else ""
     
-    # Удаляем сообщение с окном
-    try:
-        await callback.message.delete()
-    except Exception as e:
-        logger.warning(f"Не удалось удалить сообщение: {e}")
+    # Оставляем сообщение с окном в чате (не удаляем)
     
     try:
         if button_type == "self":

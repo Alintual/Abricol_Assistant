@@ -1,6 +1,12 @@
 # Скрипт для полной остановки Docker
 # Использование: .\stop_docker.ps1
 
+# Устанавливаем кодировку UTF-8 для корректного отображения русского текста
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+[Console]::InputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+chcp 65001 | Out-Null
+
 $separator = "=" * 80
 
 Write-Host $separator -ForegroundColor Cyan

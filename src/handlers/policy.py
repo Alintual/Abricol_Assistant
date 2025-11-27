@@ -143,11 +143,7 @@ async def handle_policy_accept(callback: CallbackQuery, state: FSMContext) -> No
     
     await callback.answer("Спасибо за согласие!")
     
-    # Удаляем сообщение с политикой
-    try:
-        await callback.message.delete()
-    except Exception:
-        pass
+    # Оставляем сообщение с политикой в чате (не удаляем)
     
     # Проверяем Status из обновленного профиля пользователя
     status = updated_profile.status if updated_profile else (profile.status if profile else "Читатель")
@@ -244,12 +240,7 @@ async def handle_policy_reject(callback: CallbackQuery, state: FSMContext) -> No
             except Exception as e2:
                 logger.error(f"Ошибка при редактировании сообщения: {e2}", exc_info=True)
         
-        # Удаляем сообщение с политикой ПОСЛЕ отправки ответа (не критично, если не удастся)
-        try:
-            if callback.message:
-                await callback.message.delete()
-        except Exception as e:
-            logger.warning(f"Не удалось удалить сообщение с политикой: {e}")
+        # Оставляем сообщение с политикой в чате (не удаляем)
     except Exception as e:
         logger.error(f"Критическая ошибка в handle_policy_reject: {e}", exc_info=True)
         try:
