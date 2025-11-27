@@ -1,0 +1,48 @@
+services:
+  abricol-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: abricol-assistant
+    restart: unless-stopped
+    
+    # Переменные окружения из .env файла
+    env_file:
+      - .env
+    
+    # Переменные окружения (можно переопределить в .env)
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/app
+    
+    # Монтирование томов для сохранения данных
+    volumes:
+      # База данных SQLite
+      - ./abricol.db:/app/abricol.db
+      # База знаний
+      - ./knowledge.db:/app/knowledge.db
+      # Excel файл с лидами
+      - ./leads.xlsx:/app/leads.xlsx
+      # Данные базы знаний (PDF, изображения, структурированные тексты)
+      - ./src/knowledge/data:/app/src/knowledge/data
+      # Логи (опционально)
+      - ./bot.log:/app/bot.log
+    
+    # Сеть (если нужна)
+    networks:
+      - abricol-network
+    
+    # Ограничения ресурсов (опционально)
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+networks:
+  abricol-network:
+    driver: bridge
+

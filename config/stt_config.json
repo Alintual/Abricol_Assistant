@@ -1,0 +1,9 @@
+{
+  "model_size": "small",
+  "device": "cpu",
+  "compute_type": "int8",
+  "language": "ru",
+  "beam_size": 5,
+  "vad_filter": false,
+  "temperature": 0.0
+}

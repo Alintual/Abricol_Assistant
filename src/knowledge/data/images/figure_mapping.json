@@ -1,0 +1,163 @@
+{
+  "Рис.1.1.1": {
+    "page": 1,
+    "image": "1.1_Общая_информация_page1__Image26.jpg",
+    "path": "C:\\Users\\User\\Desktop\\Abricol_Assistant\\src\\knowledge\\data\\images\\1.1_Общая_информация_page1__Image26.jpg",
+    "source": "1.1_Общая информация.pdf",
+    "title": "Логотип школы"
+  },
+  "Рис.1.1.2": {
+    "page": 2,
+    "image": "1.1_Общая_информация_page2__Image37.jpg",
+    "path": "C:\\Users\\User\\Desktop\\Abricol_Assistant\\src\\knowledge\\data\\images\\1.1_Общая_информация_page2__Image37.jpg",
+    "source": "1.1_Общая информация.pdf",
+    "title": "Рекламный баннер"
+  },
+  "Рис.1.2.1": {
+    "page": 1,
+    "image": "1.2_Виды_обучения_page1__Image21.jpg",
+    "path": "C:\\Users\\User\\Desktop\\Abricol_Assistant\\src\\knowledge\\data\\images\\1.2_Виды_обучения_page1__Image21.jpg",
+    "source": "1.2_Виды обучения.pdf",
+    "title": "Сертификат К1 | Начальный курс"
+  },
+  "Рис.1.2.2": {
+    "page": 2,
+    "image": "1.2_Виды_обучения_page2__Image24.jpg",
+    "path": "C:\\Users\\User\\Desktop\\Abricol_Assistant\\src\\knowledge\\data\\images\\1.2_Виды_обучения_page2__Image24.jpg",
+    "source": "1.2_Виды обучения.pdf",
+    "title": "Сертификат К2 | Базовый курс"
+  },
+  "Рис.1.2.3": {
+    "page": 3,
+    "image": "1.2_Виды_обучения_page3__Image34.jpg",
+    "path": "C:\\Users\\User\\Desktop\\Abricol_Assistant\\src\\knowledge\\data\\images\\1.2_Виды_обучения_page3__Image34.jpg",
+    "source": "1.2_Виды обучения.pdf",
+    "title": "Сертификат К3 | Экспресс-курс"
+  },
+  "Рис.1.2.4": {
+    "page": 4,
+    "image": "1.2_Виды_обучения_page4__Image42.jpg",
+    "path": "C:\\Users\\User\\Desktop\\Abricol_Assistant\\src\\knowledge\\data\\images\\1.2_Виды_обучения_page4__Image42.jpg",
+    "source": "1.2_Виды обучения.pdf",
+    "title": "Сертификат Т1 | Тестирование"
+  },
+  "Рис.1.2.5": {
+    "page": 5,
+    "image": "1.2_Виды_обучения_page5__Image45.jpg",
+    "path": "C:\\Users\\User\\Desktop\\Abricol_Assistant\\src\\knowledge\\data\\images\\1.2_Виды_обучения_page5__Image45.jpg",
+    "source": "1.2_Виды обучения.pdf",
+    "title": "Сертификат У1 | Тренинг-класс"
+  },
+  "Рис.1.2.6": {
+    "page": 6,
+    "image": "1.2_Виды_обучения_page6__Image48.jpg",
+    "path": "C:\\Users\\User\\Desktop\\Abricol_Assistant\\src\\knowledge\\data\\images\\1.2_Виды_обучения_page6__Image48.jpg",
+    "source": "1.2_Виды обучения.pdf",
+    "title": "Сертификат А1 | Абонемент № 1 «Мастер»"
+  },
+  "Рис.1.2.7": {
+    "page": 7,
+    "image": "1.2_Виды_обучения_page7__Image51.jpg",
+    "path": "C:\\Users\\User\\Desktop\\Abricol_Assistant\\src\\knowledge\\data\\images\\1.2_Виды_обучения_page7__Image51.jpg",
+    "source": "1.2_Виды обучения.pdf",
+    "title": "Сертификат А2 | Абонемент № 2 «Юниор»"
+  },
+  "Рис.1.2.8": {
+    "page": 8,
+    "image": "1.2_Виды_обучения_page8__Image54.jpg",
+    "path": "C:\\Users\\User\\Desktop\\Abricol_Assistant\\src\\knowledge\\data\\images\\1.2_Виды_обучения_page8__Image54.jpg",
+    "source": "1.2_Виды обучения.pdf",
+    "title": "Сертификат А3 | Абонемент № 3 «Профи»"
+  },
+  "Рис.1.4.1": {
+    "page": 1,
+    "image": "1.4_Система_тренировок_БИСА_page1__Image21.jpg",
+    "path": "C:\\Users\\User\\Desktop\\Abricol_Assistant\\src\\knowledge\\data\\images\\1.4_Система_тренировок_БИСА_page1__Image21.jpg",
+    "source": "1.4_Система тренировок БИСА.pdf",
+    "title": "Логотип БИСА"
+  },
+  "Рис.1.4.2": {
+    "page": 4,
+    "image": "1.4_Система_тренировок_БИСА_page4__Image43.jpg",
+    "path": "C:\\Users\\User\\Desktop\\Abricol_Assistant\\src\\knowledge\\data\\images\\1.4_Система_тренировок_БИСА_page4__Image43.jpg",
+    "source": "1.4_Система тренировок БИСА.pdf",
+    "title": "Форма ввода"
+  },
+  "Рис.1.4.3": {
+    "page": 6,
+    "image": "1.4_Система_тренировок_БИСА_page6__Image48.jpg",
+    "path": "C:\\Users\\User\\Desktop\\Abricol_Assistant\\src\\knowledge\\data\\images\\1.4_Система_тренировок_БИСА_page6__Image48.jpg",
+    "source": "1.4_Система тренировок БИСА.pdf",
+    "title": "Навигация"
+  },
+  "Рис.1.4.4": {
+    "page": 7,
+    "image": "1.4_Система_тренировок_БИСА_page7__Image51.jpg",
+    "path": "C:\\Users\\User\\Desktop\\Abricol_Assistant\\src\\knowledge\\data\\images\\1.4_Система_тренировок_БИСА_page7__Image51.jpg",
+    "source": "1.4_Система тренировок БИСА.pdf",
+    "title": "Состав упражнений"
+  },
+  "Рис.1.4.5": {
+    "page": 8,
+    "image": "1.4_Система_тренировок_БИСА_page8__Image54.jpg",
+    "path": "C:\\Users\\User\\Desktop\\Abricol_Assistant\\src\\knowledge\\data\\images\\1.4_Система_тренировок_БИСА_page8__Image54.jpg",
+    "source": "1.4_Система тренировок БИСА.pdf",
+    "title": "База данных"
+  },
+  "Рис.1.4.6": {
+    "page": 9,
+    "image": "1.4_Система_тренировок_БИСА_page9__Image62.jpg",
+    "path": "C:\\Users\\User\\Desktop\\Abricol_Assistant\\src\\knowledge\\data\\images\\1.4_Система_тренировок_БИСА_page9__Image62.jpg",
+    "source": "1.4_Система тренировок БИСА.pdf",
+    "title": "Полезности"
+  },
+  "Рис.2.1.2.1": {
+    "page": 1,
+    "image": "2.1.2_Правила_игры_Корона_page1__Image28.jpg",
+    "path": "C:\\Users\\User\\Desktop\\Abricol_Assistant\\src\\knowledge\\data\\images\\2.1.2_Правила_игры_Корона_page1__Image28.jpg",
+    "source": "2.1.2_Правила игры Корона.pdf",
+    "title": "Расстановка шаров"
+  },
+  "Рис.2.2.1": {
+    "page": 2,
+    "image": "2.2_Технические_требования_к_бильярдным_столам_и_оборудованию_ФБСР_page2__Image44.jpg",
+    "path": "C:\\Users\\User\\Desktop\\Abricol_Assistant\\src\\knowledge\\data\\images\\2.2_Технические_требования_к_бильярдным_столам_и_оборудованию_ФБСР_page2__Image44.jpg",
+    "source": "2.2_Технические требования к бильярдным столам и оборудованию ФБСР.pdf",
+    "title": "Требования к створам луз."
+  },
+  "Рис.2.2.2": {
+    "page": 3,
+    "image": "2.2_Технические_требования_к_бильярдным_столам_и_оборудованию_ФБСР_page3__Image54.jpg",
+    "path": "C:\\Users\\User\\Desktop\\Abricol_Assistant\\src\\knowledge\\data\\images\\2.2_Технические_требования_к_бильярдным_столам_и_оборудованию_ФБСР_page3__Image54.jpg",
+    "source": "2.2_Технические требования к бильярдным столам и оборудованию ФБСР.pdf",
+    "title": "Требования к профилю резины бортов."
+  },
+  "Рис.2.2.3": {
+    "page": 4,
+    "image": "2.2_Технические_требования_к_бильярдным_столам_и_оборудованию_ФБСР_page4__Image57.jpg",
+    "path": "C:\\Users\\User\\Desktop\\Abricol_Assistant\\src\\knowledge\\data\\images\\2.2_Технические_требования_к_бильярдным_столам_и_оборудованию_ФБСР_page4__Image57.jpg",
+    "source": "2.2_Технические требования к бильярдным столам и оборудованию ФБСР.pdf",
+    "title": "Требования к расположению светильников."
+  },
+  "Рис.2.2.4": {
+    "page": 5,
+    "image": "2.2_Технические_требования_к_бильярдным_столам_и_оборудованию_ФБСР_page5__Image60.jpg",
+    "path": "C:\\Users\\User\\Desktop\\Abricol_Assistant\\src\\knowledge\\data\\images\\2.2_Технические_требования_к_бильярдным_столам_и_оборудованию_ФБСР_page5__Image60.jpg",
+    "source": "2.2_Технические требования к бильярдным столам и оборудованию ФБСР.pdf",
+    "title": "Требования к схеме световых зон."
+  },
+  "Рис.2.2.5": {
+    "page": 6,
+    "image": "2.2_Технические_требования_к_бильярдным_столам_и_оборудованию_ФБСР_page6__Image63.jpg",
+    "path": "C:\\Users\\User\\Desktop\\Abricol_Assistant\\src\\knowledge\\data\\images\\2.2_Технические_требования_к_бильярдным_столам_и_оборудованию_ФБСР_page6__Image63.jpg",
+    "source": "2.2_Технические требования к бильярдным столам и оборудованию ФБСР.pdf",
+    "title": "Требования к размерам игровой зоны."
+  },
+  "Рис.2.2.6": {
+    "page": 7,
+    "image": "2.2_Технические_требования_к_бильярдным_столам_и_оборудованию_ФБСР_page7__Image66.jpg",
+    "path": "C:\\Users\\User\\Desktop\\Abricol_Assistant\\src\\knowledge\\data\\images\\2.2_Технические_требования_к_бильярдным_столам_и_оборудованию_ФБСР_page7__Image66.jpg",
+    "source": "2.2_Технические требования к бильярдным столам и оборудованию ФБСР.pdf",
+    "title": "Требования к столику, полке и табло."
+  }
+}
