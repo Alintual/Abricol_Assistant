@@ -41,7 +41,11 @@ RUN mkdir -p /app/src/knowledge/data/images \
     /app/src/knowledge/data/structured \
     /app/data \
     /tmp \
-    /app/.cache
+    /app/.cache && \
+    # Создание пустых файлов баз данных, если они не будут смонтированы
+    touch /app/abricol.db /app/knowledge.db /app/leads.xlsx /app/bot.log && \
+    # Установка прав доступа
+    chmod 666 /app/abricol.db /app/knowledge.db /app/leads.xlsx /app/bot.log
 
 # Установка переменных окружения для кэша моделей faster-whisper
 ENV HF_HOME=/app/.cache/huggingface

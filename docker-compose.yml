@@ -21,19 +21,20 @@ services:
     
     # Монтирование томов для сохранения данных
     volumes:
+      # Директория для данных (базы данных и файлы)
+      - ./data:/app/data:rw
       # База данных SQLite
-      - ./abricol.db:/app/abricol.db
+      - ./abricol.db:/app/abricol.db:rw
       # База знаний
-      - ./knowledge.db:/app/knowledge.db
+      - ./knowledge.db:/app/knowledge.db:rw
       # Excel файл с лидами
-      - ./leads.xlsx:/app/leads.xlsx
+      - ./leads.xlsx:/app/leads.xlsx:rw
       # Данные базы знаний (PDF, изображения, структурированные тексты)
-      - ./src/knowledge/data:/app/src/knowledge/data
-      # Логи (опционально)
-      - ./bot.log:/app/bot.log
+      - ./src/knowledge/data:/app/src/knowledge/data:ro
+      # Логи
+      - ./bot.log:/app/bot.log:rw
       # Кэш моделей faster-whisper (для ускорения последующих запусков)
-      - ./cache/models:/app/.cache/huggingface
-      # Временные файлы (создается автоматически в контейнере)
+      - ./cache/models:/app/.cache/huggingface:rw
     
     # Сеть (если нужна)
     networks:
