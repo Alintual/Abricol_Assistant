@@ -2,10 +2,15 @@
 # Использование: .\rebuild_docker.ps1
 
 # Устанавливаем кодировку UTF-8 для корректного отображения русского текста
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-[Console]::InputEncoding = [System.Text.Encoding]::UTF8
-$OutputEncoding = [System.Text.Encoding]::UTF8
-chcp 65001 | Out-Null
+try {
+    chcp 65001 | Out-Null
+    $OutputEncoding = [System.Text.Encoding]::UTF8
+    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+    [Console]::InputEncoding = [System.Text.Encoding]::UTF8
+    $PSDefaultParameterValues['*:Encoding'] = 'utf8'
+} catch {
+    # Если не удалось установить UTF-8, продолжаем работу
+}
 
 $separator = "=" * 80
 
@@ -97,7 +102,7 @@ Write-Host $separator -ForegroundColor Cyan
 Write-Host "Пересборка завершена!" -ForegroundColor Green
 Write-Host $separator -ForegroundColor Cyan
 Write-Host ""
-Write-Host "Для просмотра логов используйте:" -ForegroundColor Yellow
-Write-Host "  docker-compose logs -f" -ForegroundColor Cyan
+Write-Host 'Для просмотра логов используйте:' -ForegroundColor Yellow
+Write-Host '  docker-compose logs -f' -ForegroundColor Cyan
 Write-Host ""
 
