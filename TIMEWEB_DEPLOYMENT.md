@@ -114,14 +114,17 @@ STT_LANGUAGE=ru
 mkdir -p cache/models
 mkdir -p data
 
-# Создание пустых файлов баз данных (если их нет)
-touch abricol.db knowledge.db leads.xlsx bot.log
+# Создание пустых файлов баз данных в директории data (если их нет)
+touch data/abricol.db data/knowledge.db data/leads.xlsx data/bot.log
 
 # Установка прав доступа
-chmod 666 abricol.db knowledge.db leads.xlsx bot.log
+chmod 666 data/abricol.db data/knowledge.db data/leads.xlsx data/bot.log
 ```
 
-**Важно:** Файлы баз данных должны существовать перед запуском контейнера, иначе SQLite не сможет их создать из-за монтирования томов.
+**Важно:** 
+- Файлы баз данных должны существовать в директории `data/` перед запуском контейнера
+- Если Docker создал директории вместо файлов, удалите их: `rm -rf abricol.db knowledge.db` (если они являются директориями)
+- Entrypoint скрипт автоматически создаст файлы при запуске, если их нет
 
 ---
 
@@ -378,19 +381,34 @@ crontab -e
 
 ### Ошибка "unable to open database file"
 
-**Причина:** Файлы баз данных не существуют или нет прав доступа.
+**Причина:** Файлы баз данных не существуют, являются директориями вместо файлов, или нет прав доступа.
 
 **Решение:**
 ```bash
-# Создайте файлы баз данных
-touch abricol.db knowledge.db leads.xlsx bot.log
+# Остановите контейнер
+docker-compose down
+
+# Проверьте, не являются ли файлы директориями
+ls -la abricol.db knowledge.db
+
+# Если это директории, удалите их
+rm -rf abricol.db knowledge.db leads.xlsx bot.log
+
+# Создайте файлы баз данных в директории data
+mkdir -p data
+touch data/abricol.db data/knowledge.db data/leads.xlsx data/bot.log
 
 # Установите права доступа
-chmod 666 abricol.db knowledge.db leads.xlsx bot.log
+chmod 666 data/abricol.db data/knowledge.db data/leads.xlsx data/bot.log
 
 # Перезапустите контейнер
-docker-compose restart
+docker-compose up -d
+
+# Проверьте логи
+docker-compose logs -f
 ```
+
+**Альтернативное решение:** Entrypoint скрипт автоматически создаст файлы при запуске, но убедитесь, что на хосте нет директорий с такими же именами.
 
 ### Бот не запускается
 

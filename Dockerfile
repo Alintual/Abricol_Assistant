@@ -41,11 +41,11 @@ RUN mkdir -p /app/src/knowledge/data/images \
     /app/src/knowledge/data/structured \
     /app/data \
     /tmp \
-    /app/.cache && \
-    # Создание пустых файлов баз данных, если они не будут смонтированы
-    touch /app/abricol.db /app/knowledge.db /app/leads.xlsx /app/bot.log && \
-    # Установка прав доступа
-    chmod 666 /app/abricol.db /app/knowledge.db /app/leads.xlsx /app/bot.log
+    /app/.cache
+
+# Копирование entrypoint скрипта
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Установка переменных окружения для кэша моделей faster-whisper
 ENV HF_HOME=/app/.cache/huggingface
@@ -57,4 +57,5 @@ ENV TMPDIR=/tmp
 # RUN python -m src.build_kb || echo "База знаний будет собрана при первом запуске"
 
 # Точка входа
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["python", "-m", "src.bot"]
