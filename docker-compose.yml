@@ -40,14 +40,14 @@ services:
       - abricol-network
     
     # Ограничения ресурсов (опционально)
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 2G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
+deploy:
+  resources:
+    limits:
+      cpus: '1.0'      # максимум ваш 1 vCPU
+      memory: 1G
+    reservations:
+      cpus: '0.5'
+      memory: 512M
 
 networks:
   abricol-network:

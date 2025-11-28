@@ -118,6 +118,48 @@ mkdir -p cache/models
 
 ### Шаг 7: Сборка и запуск контейнера
 
+Запустить Docker на VPS
+Выполните по очереди:
+
+
+bash
+systemctl status docker
+Если в выводе не active (running), запустите:
+
+
+bash
+systemctl start docker
+systemctl enable docker
+enable сделает так, чтобы Docker запускался сам при перезагрузке сервера.
+
+Проверьте ещё раз:
+
+
+bash
+systemctl status docker
+Должно быть что-то вроде: Active: 
+
+Повторить сборку
+Теперь переходите в каталог проекта:
+
+
+bash
+cd /opt/Abricol_Assistant
+И запускайте:
+
+
+bash
+docker compose build --progress=plain
+# или, если у вас только docker-compose (старая версия):
+# docker-compose build
+После успешной сборки — запуск:
+
+
+bash
+docker compose up -d
+# или
+# docker-compose up -d
+
 ```bash
 # Сборка образа (первый раз может занять 10-15 минут)
 docker-compose build
