@@ -40,15 +40,15 @@ services:
     networks:
       - abricol-network
     
-    # Ограничения ресурсов (опционально)
-deploy:
-  resources:
-    limits:
-      cpus: '1.0'      # максимум ваш 1 vCPU
-      memory: 1G
-    reservations:
-      cpus: '0.5'
-      memory: 512M
+    # Ограничения ресурсов (опционально, только для docker-compose v3+)
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '1.0'      # максимум ваш 1 vCPU
+    #       memory: 1G
+    #     reservations:
+    #       cpus: '0.5'
+    #       memory: 512M
 
 networks:
   abricol-network:
