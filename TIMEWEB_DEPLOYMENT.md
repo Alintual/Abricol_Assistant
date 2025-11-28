@@ -130,34 +130,61 @@ chmod 666 data/abricol.db data/knowledge.db data/leads.xlsx data/bot.log
 
 ### Шаг 7: Сборка и запуск контейнера
 
-Запустить Docker на VPS
-Выполните по очереди:
+**⚠️ ВАЖНО: Все команды выполняются на сервере Timeweb по SSH!**
 
+#### 7.1. Запуск Docker на VPS
 
-bash
+Выполните на сервере:
+
+```bash
+# Проверка статуса Docker
 systemctl status docker
-Если в выводе не active (running), запустите:
+```
 
+Если в выводе не `active (running)`, запустите:
 
-bash
+```bash
+# Запуск Docker
 systemctl start docker
+
+# Включение автозапуска при перезагрузке
 systemctl enable docker
-enable сделает так, чтобы Docker запускался сам при перезагрузке сервера.
+```
 
 Проверьте ещё раз:
 
-
-bash
+```bash
 systemctl status docker
-Должно быть что-то вроде: Active: 
+```
 
-Повторить сборку
-Теперь переходите в каталог проекта:
+Должно быть: `Active: active (running)`
 
+#### 7.2. Сборка образа
 
-bash
+**Выполните на сервере:**
+
+```bash
+# Переход в каталог проекта
 cd /opt/Abricol_Assistant
-И запускайте:
+
+# Сборка образа (первый раз может занять 10-15 минут)
+docker-compose build
+```
+
+#### 7.3. Запуск контейнера
+
+**Выполните на сервере:**
+
+```bash
+# Запуск в фоновом режиме
+docker-compose up -d
+
+# Проверка статуса
+docker-compose ps
+
+# Просмотр логов
+docker-compose logs -f
+```
 
 
 bash
@@ -383,30 +410,42 @@ crontab -e
 
 **Причина:** Файлы баз данных не существуют, являются директориями вместо файлов, или нет прав доступа.
 
-**Решение:**
+**Решение (выполняйте ВСЕ команды на сервере Timeweb по SSH):**
+
 ```bash
-# Остановите контейнер
+# 1. Подключитесь к серверу по SSH
+ssh root@ваш_ip_адрес
+
+# 2. Перейдите в директорию проекта
+cd /opt/Abricol_Assistant
+
+# 3. Остановите контейнер
 docker-compose down
 
-# Проверьте, не являются ли файлы директориями
+# 4. Проверьте, не являются ли файлы директориями
 ls -la abricol.db knowledge.db
 
-# Если это директории, удалите их
+# 5. Если это директории, удалите их
 rm -rf abricol.db knowledge.db leads.xlsx bot.log
 
-# Создайте файлы баз данных в директории data
-mkdir -p data
+# 6. Создайте файлы баз данных в директории data
+mkdir -p data cache/models
 touch data/abricol.db data/knowledge.db data/leads.xlsx data/bot.log
 
-# Установите права доступа
+# 7. Установите права доступа
 chmod 666 data/abricol.db data/knowledge.db data/leads.xlsx data/bot.log
 
-# Перезапустите контейнер
+# 8. Пересоберите образ с новым entrypoint скриптом (НА СЕРВЕРЕ)
+docker-compose build --no-cache
+
+# 9. Запустите контейнер (НА СЕРВЕРЕ)
 docker-compose up -d
 
-# Проверьте логи
+# 10. Проверьте логи (НА СЕРВЕРЕ)
 docker-compose logs -f
 ```
+
+**Важно:** Все команды с `docker-compose` выполняются на сервере Timeweb, а не локально!
 
 **Альтернативное решение:** Entrypoint скрипт автоматически создаст файлы при запуске, но убедитесь, что на хосте нет директорий с такими же именами.
 
