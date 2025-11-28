@@ -239,7 +239,48 @@ python -m src.bot
 - ✅ Легкое масштабирование и обновление
 - ✅ Единообразная работа на разных платформах
 
-#### Быстрый старт с Docker Compose
+#### 🚀 Развертывание на Timeweb (рекомендуется)
+
+Проект протестирован и оптимизирован для развертывания на **Timeweb VPS**.
+
+**Быстрый старт на Timeweb:**
+
+1. **Создайте VPS** на [Timeweb](https://timeweb.com/) с Ubuntu 22.04 LTS
+   - Рекомендуемая конфигурация: 4 vCPU, 8 GB RAM, 100 GB SSD
+   - Минимум: 2 vCPU, 4 GB RAM, 50 GB SSD
+
+2. **Подключитесь по SSH:**
+   ```bash
+   ssh root@ваш_ip_адрес
+   ```
+
+3. **Установите Docker и Docker Compose:**
+   ```bash
+   curl -fsSL https://get.docker.com -o get-docker.sh
+   sh get-docker.sh
+   curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+   chmod +x /usr/local/bin/docker-compose
+   ```
+
+4. **Клонируйте репозиторий:**
+   ```bash
+   cd /opt
+   git clone https://github.com/Alintual/Abricol_Assistant.git
+   cd Abricol_Assistant
+   ```
+
+5. **Создайте файл `.env`** с переменными окружения (см. раздел "Настройка переменных окружения" выше)
+
+6. **Запустите бота:**
+   ```bash
+   docker-compose build
+   docker-compose up -d
+   docker-compose logs -f
+   ```
+
+**📖 Подробная инструкция:** см. файл [TIMEWEB_DEPLOYMENT.md](TIMEWEB_DEPLOYMENT.md)
+
+#### Быстрый старт с Docker Compose (локально)
 
 1. **Создайте файл `.env`** (см. раздел "Настройка переменных окружения" выше)
 
