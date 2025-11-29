@@ -198,8 +198,8 @@ def _sync_save_to_excel(profile: UserProfile, name_sys: str = "") -> Optional[st
         
         # Сначала пытаемся сохранить напрямую в основной файл
         for attempt in range(1, max_retries + 1):
-        try:
-            workbook.save(excel_path)
+            try:
+                workbook.save(excel_path)
                 saved_successfully = True
                 break
             except PermissionError:
