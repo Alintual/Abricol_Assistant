@@ -1,0 +1,59 @@
+# Docker Compose конфигурация для продакшена (TimeWeb сервер)
+# Использование: docker-compose -f docker-compose.prod.yml up -d
+
+services:
+  abricol-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: abricol-assistant
+    restart: unless-stopped  # Автозапуск на сервере
+    
+    # Переменные окружения из .env файла
+    env_file:
+      - .env
+    
+    # Переменные окружения (можно переопределить в .env)
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/app
+      # Переменные для кэша моделей faster-whisper
+      - HF_HOME=/app/.cache/huggingface
+      - XDG_CACHE_HOME=/app/.cache
+      - TMPDIR=/tmp
+    
+    # Монтирование томов для сохранения данных
+    volumes:
+      # Директория для данных (базы данных и файлы) - монтируем директорию, а не отдельные файлы
+      - ./data:/app/data:rw
+      # База данных SQLite (в директории data)
+      - ./data/abricol.db:/app/abricol.db:rw
+      # База знаний (в директории data)
+      - ./data/knowledge.db:/app/knowledge.db:rw
+      # Excel файл с лидами (в директории data)
+      - ./data/leads.xlsx:/app/leads.xlsx:rw
+      # Логи (в директории data)
+      - ./data/bot.log:/app/bot.log:rw
+      # Данные базы знаний (PDF, изображения, структурированные тексты)
+      - ./src/knowledge/data:/app/src/knowledge/data:ro
+      # Кэш моделей faster-whisper (для ускорения последующих запусков)
+      - ./cache/models:/app/.cache/huggingface:rw
+    
+    # Сеть (если нужна)
+    networks:
+      - abricol-network
+    
+    # Ограничения ресурсов (опционально, только для docker-compose v3+)
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '1.0'      # максимум ваш 1 vCPU
+    #       memory: 1G
+    #     reservations:
+    #       cpus: '0.5'
+    #       memory: 512M
+
+networks:
+  abricol-network:
+    driver: bridge
+

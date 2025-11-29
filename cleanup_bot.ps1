@@ -1,15 +1,60 @@
+﻿# Устанавливаем кодировку UTF-8 ПЕРЕД всем остальным
+chcp 65001 | Out-Null
+[System.Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+[System.Console]::InputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+$PSDefaultParameterValues['*:Encoding'] = 'utf8'
+
 # Скрипт для очистки кэша Python и остановки всех запущенных копий бота
 # Использование: .\cleanup_bot.ps1
-
-# Устанавливаем кодировку UTF-8 для корректного отображения русского текста
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-[Console]::InputEncoding = [System.Text.Encoding]::UTF8
-$OutputEncoding = [System.Text.Encoding]::UTF8
-chcp 65001 | Out-Null
 
 # Подавляем информационные сообщения PowerShell
 $ProgressPreference = 'SilentlyContinue'
 $ErrorActionPreference = 'SilentlyContinue'
+
+# Сохраняем оригинальный Write-Host
+$OriginalWriteHost = Get-Command Write-Host
+
+# Переопределяем Write-Host для корректного вывода русского текста
+function Write-Host {
+    param(
+        [Parameter(ValueFromPipeline)]
+        [object]$Object,
+        [switch]$NoNewline,
+        [object]$Separator,
+        [ConsoleColor]$ForegroundColor = [ConsoleColor]::White,
+        [ConsoleColor]$BackgroundColor
+    )
+    
+    $text = if ($Object) { $Object.ToString() } else { "" }
+    
+    # Устанавливаем цвет переднего плана
+    if ($ForegroundColor) {
+        $originalFg = [Console]::ForegroundColor
+        [Console]::ForegroundColor = $ForegroundColor
+    }
+    
+    # Устанавливаем цвет фона
+    if ($BackgroundColor) {
+        $originalBg = [Console]::BackgroundColor
+        [Console]::BackgroundColor = $BackgroundColor
+    }
+    
+    # Выводим текст напрямую через .NET Console для правильной работы с UTF-8
+    if ($NoNewline) {
+        [Console]::Write($text)
+    } else {
+        [Console]::WriteLine($text)
+    }
+    
+    # Восстанавливаем оригинальные цвета
+    if ($ForegroundColor) {
+        [Console]::ForegroundColor = $originalFg
+    }
+    if ($BackgroundColor) {
+        [Console]::BackgroundColor = $originalBg
+    }
+}
 
 Write-Host ("=" * 80) -ForegroundColor Cyan
 Write-Host "Очистка кэша Python и остановка всех копий бота" -ForegroundColor Yellow

@@ -1,5 +1,29 @@
 # 🚀 Развертывание на Timeweb
 
+## 🎯 Быстрый старт (если уже есть SSH доступ к серверу)
+
+После клонирования репозитория и создания `.env` файла, используйте готовые скрипты:
+
+```bash
+cd /opt/Abricol_Assistant
+
+# 1. Развертывание (первый раз)
+chmod +x deploy_timeweb.sh
+./deploy_timeweb.sh
+
+# 2. Проверка статуса
+chmod +x status_timeweb.sh
+./status_timeweb.sh
+
+# 3. Обновление (когда нужно)
+chmod +x update_timeweb.sh
+./update_timeweb.sh
+```
+
+**Важно:** На сервере используется `docker-compose.prod.yml` с автозапуском (`restart: unless-stopped`), в отличие от локального `docker-compose.yml`.
+
+---
+
 ## 📋 Пошаговая инструкция
 
 ### Шаг 1: Создание VPS на Timeweb
@@ -159,7 +183,29 @@ systemctl status docker
 
 Должно быть: `Active: active (running)`
 
-#### 7.2. Сборка образа
+#### 7.2. Развертывание бота (автоматический способ - РЕКОМЕНДУЕТСЯ)
+
+**Выполните на сервере:**
+
+```bash
+# Переход в каталог проекта
+cd /opt/Abricol_Assistant
+
+# Сделайте скрипт развертывания исполняемым
+chmod +x deploy_timeweb.sh
+
+# Запустите скрипт развертывания
+./deploy_timeweb.sh
+```
+
+Скрипт автоматически:
+- Проверит Docker и Docker Compose
+- Создаст необходимые директории и файлы
+- Соберет Docker образ
+- Запустит контейнер с автозапуском
+- Покажет статус
+
+#### 7.3. Развертывание бота (ручной способ)
 
 **Выполните на сервере:**
 
@@ -168,50 +214,19 @@ systemctl status docker
 cd /opt/Abricol_Assistant
 
 # Сборка образа (первый раз может занять 10-15 минут)
-docker-compose build
-```
-
-#### 7.3. Запуск контейнера
-
-**Выполните на сервере:**
-
-```bash
-# Запуск в фоновом режиме
-docker-compose up -d
-
-# Проверка статуса
-docker-compose ps
-
-# Просмотр логов
-docker-compose logs -f
-```
-
-
-bash
-docker compose build --progress=plain
-# или, если у вас только docker-compose (старая версия):
-# docker-compose build
-После успешной сборки — запуск:
-
-
-bash
-docker compose up -d
-# или
-# docker-compose up -d
-
-```bash
-# Сборка образа (первый раз может занять 10-15 минут)
-docker-compose build
+docker-compose -f docker-compose.prod.yml build
 
 # Запуск в фоновом режиме
-docker-compose up -d
+docker-compose -f docker-compose.prod.yml up -d
 
 # Проверка статуса
-docker-compose ps
+docker-compose -f docker-compose.prod.yml ps
 
 # Просмотр логов
-docker-compose logs -f
+docker-compose -f docker-compose.prod.yml logs -f
 ```
+
+**Важно:** На сервере используется `docker-compose.prod.yml`, который включает автозапуск (`restart: unless-stopped`).
 
 ---
 
@@ -267,13 +282,13 @@ systemctl status abricol-bot.service
 
 ```bash
 # Логи в реальном времени
-docker-compose logs -f
+docker-compose -f docker-compose.prod.yml logs -f
 
 # Последние 100 строк
-docker-compose logs --tail=100
+docker-compose -f docker-compose.prod.yml logs --tail=100
 
 # Логи за последний час
-docker-compose logs --since 1h
+docker-compose -f docker-compose.prod.yml logs --since 1h
 ```
 
 ### Проверка в Telegram
@@ -287,35 +302,68 @@ docker-compose logs --since 1h
 
 ## 🛠️ Управление ботом
 
+### Проверка статуса (автоматический способ)
+
+Используйте готовый скрипт:
+
+```bash
+cd /opt/Abricol_Assistant
+chmod +x status_timeweb.sh
+./status_timeweb.sh
+```
+
 ### Перезапуск
 
 ```bash
 cd /opt/Abricol_Assistant
-docker-compose restart
+docker-compose -f docker-compose.prod.yml restart
 ```
 
 ### Остановка
 
 ```bash
-docker-compose stop
+docker-compose -f docker-compose.prod.yml stop
 ```
 
 ### Запуск
 
 ```bash
-docker-compose start
+docker-compose -f docker-compose.prod.yml start
 ```
 
 ### Полная перезагрузка
 
 ```bash
-docker-compose down
-docker-compose up -d
+docker-compose -f docker-compose.prod.yml down
+docker-compose -f docker-compose.prod.yml up -d
 ```
 
 ---
 
 ## 🔄 Обновление бота
+
+### Автоматический способ (РЕКОМЕНДУЕТСЯ)
+
+Используйте готовый скрипт:
+
+```bash
+cd /opt/Abricol_Assistant
+
+# Сделайте скрипт исполняемым (только первый раз)
+chmod +x update_timeweb.sh
+
+# Запустите обновление
+./update_timeweb.sh
+```
+
+Скрипт автоматически:
+- Получит обновления из Git
+- Остановит контейнер
+- Пересоберет образ без кэша
+- Запустит обновленный контейнер
+- Покажет статус
+
+### Ручной способ
 
 ```bash
 # Переход в директорию проекта
@@ -325,40 +373,9 @@ cd /opt/Abricol_Assistant
 git pull origin master
 
 # Пересборка и перезапуск
-docker-compose down
-docker-compose build --no-cache
-docker-compose up -d
-```
-
-Или используйте скрипт:
-
-```bash
-# Создание скрипта обновления
-nano /opt/Abricol_Assistant/update.sh
-```
-
-Добавьте:
-
-```bash
-#!/bin/bash
-cd /opt/Abricol_Assistant
-git pull origin master
-docker-compose down
-docker-compose build --no-cache
-docker-compose up -d
-echo "Бот обновлен!"
-```
-
-Сделайте исполняемым:
-
-```bash
-chmod +x /opt/Abricol_Assistant/update.sh
-```
-
-Запуск обновления:
-
-```bash
-/opt/Abricol_Assistant/update.sh
+docker-compose -f docker-compose.prod.yml down
+docker-compose -f docker-compose.prod.yml build --no-cache
+docker-compose -f docker-compose.prod.yml up -d
 ```
 
 ---
@@ -420,13 +437,13 @@ ssh root@ваш_ip_адрес
 cd /opt/Abricol_Assistant
 
 # 3. Остановите контейнер
-docker-compose down
+docker-compose -f docker-compose.prod.yml down
 
 # 4. Проверьте, не являются ли файлы директориями
-ls -la abricol.db knowledge.db
+ls -la data/abricol.db data/knowledge.db
 
 # 5. Если это директории, удалите их
-rm -rf abricol.db knowledge.db leads.xlsx bot.log
+rm -rf data/abricol.db data/knowledge.db data/leads.xlsx data/bot.log
 
 # 6. Создайте файлы баз данных в директории data
 mkdir -p data cache/models
@@ -436,13 +453,13 @@ touch data/abricol.db data/knowledge.db data/leads.xlsx data/bot.log
 chmod 666 data/abricol.db data/knowledge.db data/leads.xlsx data/bot.log
 
 # 8. Пересоберите образ с новым entrypoint скриптом (НА СЕРВЕРЕ)
-docker-compose build --no-cache
+docker-compose -f docker-compose.prod.yml build --no-cache
 
 # 9. Запустите контейнер (НА СЕРВЕРЕ)
-docker-compose up -d
+docker-compose -f docker-compose.prod.yml up -d
 
 # 10. Проверьте логи (НА СЕРВЕРЕ)
-docker-compose logs -f
+docker-compose -f docker-compose.prod.yml logs -f
 ```
 
 **Важно:** Все команды с `docker-compose` выполняются на сервере Timeweb, а не локально!
@@ -453,16 +470,19 @@ docker-compose logs -f
 
 ```bash
 # Проверьте логи
-docker-compose logs
+docker-compose -f docker-compose.prod.yml logs
 
 # Проверьте статус контейнера
-docker-compose ps
+docker-compose -f docker-compose.prod.yml ps
 
 # Проверьте файл .env
 cat .env
 
 # Проверьте существование файлов баз данных
-ls -la abricol.db knowledge.db
+ls -la data/abricol.db data/knowledge.db
+
+# Или используйте готовый скрипт проверки статуса
+./status_timeweb.sh
 ```
 
 ### Ошибка "Cannot connect to Docker daemon"
@@ -555,12 +575,23 @@ dpkg-reconfigure -plow unattended-upgrades
 - [ ] Установлен Docker и Docker Compose
 - [ ] Клонирован репозиторий
 - [ ] Создан файл .env с переменными
-- [ ] Собран Docker образ
-- [ ] Запущен контейнер
-- [ ] Настроен автозапуск через systemd
+- [ ] Скрипты развертывания сделаны исполняемыми (`chmod +x *.sh`)
+- [ ] Выполнен скрипт развертывания (`./deploy_timeweb.sh`)
+- [ ] Проверен статус (`./status_timeweb.sh`)
 - [ ] Проверена работа бота в Telegram
-- [ ] Настроено резервное копирование
-- [ ] Настроена безопасность (firewall)
+- [ ] (Опционально) Настроен автозапуск через systemd
+- [ ] (Опционально) Настроено резервное копирование
+- [ ] (Опционально) Настроена безопасность (firewall)
+
+## 📝 Полезные скрипты
+
+В проекте есть готовые скрипты для упрощения работы на сервере:
+
+1. **`deploy_timeweb.sh`** - Первоначальное развертывание бота
+2. **`update_timeweb.sh`** - Обновление бота (Git pull + пересборка)
+3. **`status_timeweb.sh`** - Проверка статуса бота и использование ресурсов
+
+Все скрипты автоматически используют `docker-compose.prod.yml` с автозапуском.
 
 ---
 

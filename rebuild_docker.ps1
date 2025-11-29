@@ -1,15 +1,48 @@
+﻿# Устанавливаем кодировку UTF-8 ПЕРЕД всем остальным
+chcp 65001 | Out-Null
+[System.Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+[System.Console]::InputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+$PSDefaultParameterValues['*:Encoding'] = 'utf8'
+
 # Скрипт для полной пересборки и перезапуска Docker образа
 # Использование: .\rebuild_docker.ps1
 
-# Устанавливаем кодировку UTF-8 для корректного отображения русского текста
-try {
-    chcp 65001 | Out-Null
-    $OutputEncoding = [System.Text.Encoding]::UTF8
-    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-    [Console]::InputEncoding = [System.Text.Encoding]::UTF8
-    $PSDefaultParameterValues['*:Encoding'] = 'utf8'
-} catch {
-    # Если не удалось установить UTF-8, продолжаем работу
+# Переопределяем Write-Host для корректного вывода русского текста
+function Write-Host {
+    param(
+        [Parameter(ValueFromPipeline)]
+        [object]$Object,
+        [switch]$NoNewline,
+        [object]$Separator,
+        [ConsoleColor]$ForegroundColor = [ConsoleColor]::White,
+        [ConsoleColor]$BackgroundColor
+    )
+    
+    $text = if ($Object) { $Object.ToString() } else { "" }
+    
+    if ($ForegroundColor) {
+        $originalFg = [Console]::ForegroundColor
+        [Console]::ForegroundColor = $ForegroundColor
+    }
+    
+    if ($BackgroundColor) {
+        $originalBg = [Console]::BackgroundColor
+        [Console]::BackgroundColor = $BackgroundColor
+    }
+    
+    if ($NoNewline) {
+        [Console]::Write($text)
+    } else {
+        [Console]::WriteLine($text)
+    }
+    
+    if ($ForegroundColor) {
+        [Console]::ForegroundColor = $originalFg
+    }
+    if ($BackgroundColor) {
+        [Console]::BackgroundColor = $originalBg
+    }
 }
 
 $separator = "=" * 80

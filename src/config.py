@@ -23,6 +23,14 @@ class Settings(BaseModel):
     stt_device: str = os.getenv("STT_DEVICE", "cpu")
     stt_compute_type: str = os.getenv("STT_COMPUTE_TYPE", "int8")
     stt_language: str = os.getenv("STT_LANGUAGE", "ru")
+    
+    # Email настройки
+    email_main: str = os.getenv("EMAIL_MAIN", "")
+    smtp_host: str = os.getenv("SMTP_HOST", "smtp.gmail.com")
+    smtp_port: int = int(os.getenv("SMTP_PORT", "587"))
+    # SMTP_USER по умолчанию равен EMAIL_MAIN, но можно переопределить через .env
+    smtp_user: str = os.getenv("SMTP_USER", "") or os.getenv("EMAIL_MAIN", "")
+    smtp_password: str = os.getenv("SMTP_PASSWORD", "")
 
 
 settings = Settings()
