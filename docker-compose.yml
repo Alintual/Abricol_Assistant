@@ -34,14 +34,15 @@ services:
     
     # Ограничения ресурсов для предотвращения OOM
     # Ограничиваем память контейнера, чтобы не съедать всю RAM сервера
+    # Для faster-whisper base модели нужно минимум 1GB памяти
     deploy:
       resources:
         limits:
           cpus: '1.0'
-          memory: 450M  # Оставляем память для ОС и других процессов
+          memory: 1.5G  # Увеличено для загрузки модели faster-whisper
         reservations:
           cpus: '0.5'
-          memory: 300M  # Минимум для запуска
+          memory: 512M  # Минимум для запуска
 
 networks:
   abricol-network:
