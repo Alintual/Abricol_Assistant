@@ -3153,19 +3153,52 @@ async def handle_voice_message(message: Message, state: FSMContext) -> None:
         logger.info(f"Стикер ожидания не отправляется для Фазы {current_phase}")
 
     temp_path: str | None = None
+    converted_path: str | None = None
     try:
         # Используем /tmp в Docker контейнере, если доступен, иначе системную временную директорию
         temp_dir = os.getenv("TMPDIR", os.getenv("TEMP", tempfile.gettempdir()))
         # Создаем директорию, если её нет
         os.makedirs(temp_dir, exist_ok=True)
         
+        # Скачиваем голосовое сообщение в .oga формате
         with tempfile.NamedTemporaryFile(delete=False, suffix=".oga", dir=temp_dir) as tmp:
             await message.bot.download(message.voice, destination=tmp.name)
             temp_path = tmp.name
 
-        logger.info(f"Начало транскрибации голосового файла: {temp_path}")
-        transcript = await transcribe_file(temp_path)
-        logger.info(f"Транскрибация завершена успешно")
+        logger.info(f"Голосовое сообщение скачано: {temp_path}, размер: {os.path.getsize(temp_path) if os.path.exists(temp_path) else 0} байт")
+        
+        # Конвертируем .oga в .wav через ffmpeg (faster-whisper лучше работает с .wav)
+        import subprocess
+        converted_path = temp_path.replace(".oga", ".wav")
+        
+        logger.info(f"Конвертация .oga в .wav: {converted_path}")
+        try:
+            # Конвертируем через ffmpeg
+            subprocess.run(
+                ["ffmpeg", "-i", temp_path, "-y", "-ar", "16000", "-ac", "1", "-f", "wav", converted_path],
+                check=True,
+                capture_output=True,
+                timeout=30
+            )
+            logger.info(f"Конвертация завершена успешно: {converted_path}")
+            
+            # Используем сконвертированный файл для транскрибации
+            audio_file = converted_path
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Ошибка конвертации через ffmpeg: {e.stderr.decode() if e.stderr else str(e)}")
+            # Пытаемся использовать оригинальный файл
+            audio_file = temp_path
+            logger.warning("Используем оригинальный .oga файл (может не работать)")
+        except FileNotFoundError:
+            logger.warning("ffmpeg не найден, используем оригинальный файл")
+            audio_file = temp_path
+        except Exception as e:
+            logger.error(f"Неожиданная ошибка при конвертации: {e}", exc_info=True)
+            audio_file = temp_path
+
+        logger.info(f"Начало транскрибации голосового файла: {audio_file}")
+        transcript = await transcribe_file(audio_file)
+        logger.info(f"Транскрибация завершена успешно, результат: '{transcript[:100] if transcript else 'ПУСТО'}'...")
     except ImportError as e:
         logger.error(f"STT недоступно: {e}", exc_info=True)
         # Удаляем стикер ожидания при ошибке
@@ -3181,15 +3214,19 @@ async def handle_voice_message(message: Message, state: FSMContext) -> None:
     except Exception as e:
         logger.error(f"Ошибка транскрибации голосового сообщения: {e}", exc_info=True)
         logger.error(f"Путь к временному файлу: {temp_path}, существует: {os.path.exists(temp_path) if temp_path else 'N/A'}")
+        logger.error(f"Путь к сконвертированному файлу: {converted_path}, существует: {os.path.exists(converted_path) if converted_path else 'N/A'}")
         logger.error(f"TMPDIR: {os.getenv('TMPDIR')}, TEMP: {os.getenv('TEMP')}, tempfile.gettempdir(): {tempfile.gettempdir()}")
         await _answer_with_sticker_cleanup(message, "Не удалось распознать голос. Попробуйте ещё раз или задайте вопрос текстом.", waiting_sticker_message)
         return
     finally:
-        if temp_path and os.path.exists(temp_path):
-            try:
-                os.remove(temp_path)
-            except OSError:
-                pass
+        # Удаляем временные файлы
+        for file_path in [temp_path, converted_path]:
+            if file_path and os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                    logger.debug(f"Удален временный файл: {file_path}")
+                except OSError as e:
+                    logger.warning(f"Не удалось удалить временный файл {file_path}: {e}")
 
     transcript = (transcript or "").strip()
     if not transcript:

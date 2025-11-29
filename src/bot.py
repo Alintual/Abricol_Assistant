@@ -29,7 +29,7 @@ from .db.session import init_engine_and_db
 
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
-LOG_FILE_PATH = ROOT_DIR / "bot.log"
+LOG_FILE_PATH = ROOT_DIR / "data" / "bot.log"
 
 
 def _configure_logging() -> None:
