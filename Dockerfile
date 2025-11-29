@@ -2,14 +2,12 @@
 FROM python:3.11-slim
 
 # Установка системных зависимостей
-# - build-essential: для компиляции Python пакетов
-# - ffmpeg: для обработки аудио (faster-whisper)
-# - git: для установки некоторых пакетов
+# - ffmpeg: для обработки аудио (faster-whisper, конвертация .oga в .wav)
+# build-essential удален для экономии места (faster-whisper поставляется с предкомпилированными wheel)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential \
         ffmpeg \
-        git \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
 # Rust не требуется для данного проекта
 # Все пакеты из requirements.txt устанавливаются через pip с предкомпилированными wheel файлами
