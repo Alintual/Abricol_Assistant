@@ -3154,6 +3154,7 @@ async def handle_voice_message(message: Message, state: FSMContext) -> None:
 
     temp_path: str | None = None
     converted_path: str | None = None
+    transcript: str = ""
     try:
         # Используем /tmp в Docker контейнере, если доступен, иначе системную временную директорию
         temp_dir = os.getenv("TMPDIR", os.getenv("TEMP", tempfile.gettempdir()))
