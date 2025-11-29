@@ -91,9 +91,11 @@ STT_LANGUAGE=ru
 # Excel export
 LEADS_EXCEL_PATH=./leads.xlsx
 
-# Google Sheets (опционально)
-GOOGLE_SHEETS_CREDENTIALS_PATH=./path/to/credentials.json
-GOOGLE_SHEETS_SPREADSHEET_ID=your_spreadsheet_id
+# Email настройки (для автоматической отправки leads.xlsx)
+EMAIL_MAIN=your_email@gmail.com
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_PASSWORD=your_app_password
 ```
 
 ### Шаг 2: Сборка образа
