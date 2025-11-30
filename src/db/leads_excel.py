@@ -198,8 +198,8 @@ def _sync_save_to_excel(profile: UserProfile, name_sys: str = "") -> Optional[st
         
         # Сначала пытаемся сохранить напрямую в основной файл
         for attempt in range(1, max_retries + 1):
-            try:
-                workbook.save(excel_path)
+        try:
+            workbook.save(excel_path)
                 saved_successfully = True
                 break
             except PermissionError:
@@ -270,19 +270,17 @@ async def save_lead_to_excel(profile: UserProfile, name_sys: str = "") -> None:
         logger.info(f"✅ Успешно завершено сохранение в Excel для пользователя {profile.tg_user_id}")
         
         # Отправляем файл на email после успешного сохранения
-        # ВРЕМЕННО ОТКЛЮЧЕНО: SMTP порты заблокированы провайдером
-        # TODO: Настроить отправку через API сервис (SendGrid/Mailgun) или разблокировать SMTP порты
-        # if saved_file_path:
-        #     try:
-        #         from ..email_sender import send_email_with_attachment
-        #         await send_email_with_attachment(
-        #             file_path=saved_file_path,
-        #             subject=f"Обновление leads.xlsx - новый лид",
-        #             body=f"Файл leads.xlsx был обновлен.\n\nДанные лида:\n- Статус: {profile.status or 'не указан'}\n- Имя: {profile.name or profile.name_sys or 'не указано'}\n- Телефон: {profile.phone or 'не указан'}\n\nСм. вложение."
-        #         )
-        #     except Exception as email_error:
-        #         # Не прерываем выполнение, если отправка email не удалась
-        #         logger.error(f"❌ Ошибка при отправке email: {email_error}", exc_info=True)
+        if saved_file_path:
+            try:
+                from ..email_sender import send_email_with_attachment
+                await send_email_with_attachment(
+                    file_path=saved_file_path,
+                    subject=f"Обновление leads.xlsx - новый лид",
+                    body=f"Файл leads.xlsx был обновлен.\n\nДанные лида:\n- Статус: {profile.status or 'не указан'}\n- Имя: {profile.name or profile.name_sys or 'не указано'}\n- Телефон: {profile.phone or 'не указан'}\n\nСм. вложение."
+                )
+            except Exception as email_error:
+                # Не прерываем выполнение, если отправка email не удалась
+                logger.error(f"❌ Ошибка при отправке email: {email_error}", exc_info=True)
     except Exception as e:
         logger.error(f"❌ Ошибка при запуске сохранения в Excel для пользователя {profile.tg_user_id}: {e}", exc_info=True)
         raise
