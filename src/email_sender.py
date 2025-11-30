@@ -71,11 +71,21 @@ def _sync_send_email_with_attachment(
         
         # Подключаемся к SMTP серверу и отправляем
         logger.info(f"📧 Подключение к SMTP серверу {settings.smtp_host}:{settings.smtp_port}")
-        with smtplib.SMTP(settings.smtp_host, settings.smtp_port) as server:
-            server.starttls()  # Включаем TLS
-            server.login(settings.smtp_user, settings.smtp_password)
-            text = msg.as_string()
-            server.sendmail(settings.smtp_user, recipient_email, text)
+        
+        # Используем SMTP_SSL для порта 465, обычный SMTP для портов 587/25
+        if settings.smtp_port == 465:
+            # Порт 465 требует SSL с самого начала
+            with smtplib.SMTP_SSL(settings.smtp_host, settings.smtp_port, timeout=30) as server:
+                server.login(settings.smtp_user, settings.smtp_password)
+                text = msg.as_string()
+                server.sendmail(settings.smtp_user, recipient_email, text)
+        else:
+            # Порт 587 использует STARTTLS
+            with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=30) as server:
+                server.starttls()  # Включаем TLS
+                server.login(settings.smtp_user, settings.smtp_password)
+                text = msg.as_string()
+                server.sendmail(settings.smtp_user, recipient_email, text)
         
         logger.info(f"✅ Email успешно отправлен на {recipient_email} с файлом {filename}")
         return True
