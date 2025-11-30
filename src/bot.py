@@ -36,12 +36,26 @@ def _configure_logging() -> None:
     """
     Настройка логирования.
     Логи пишутся в файл bot.log и выводятся в консоль.
+    Используется RotatingFileHandler для ограничения размера логов.
     """
+    from logging.handlers import RotatingFileHandler
+    
+    # Создаем директорию для логов, если её нет
+    LOG_FILE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    
+    # RotatingFileHandler: max 10MB, храним 3 файла (итого ~30MB логов)
+    file_handler = RotatingFileHandler(
+        LOG_FILE_PATH,
+        maxBytes=10 * 1024 * 1024,  # 10MB
+        backupCount=3,  # Храним 3 файла: bot.log, bot.log.1, bot.log.2
+        encoding="utf-8"
+    )
+    
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         handlers=[
-            logging.FileHandler(LOG_FILE_PATH, encoding="utf-8"),
+            file_handler,
             logging.StreamHandler(sys.stdout),
         ],
     )
