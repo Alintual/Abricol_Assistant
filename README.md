@@ -218,7 +218,7 @@ LEADS_EXCEL_PATH=./leads.xlsx
 # Email настройки (для автоматической отправки leads.xlsx)
 EMAIL_MAIN=your_email@gmail.com
 SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
+SMTP_PORT=465
 SMTP_PASSWORD=your_app_password
 ```
 
@@ -350,7 +350,7 @@ docker-compose build --no-cache
 | `LEADS_EXCEL_PATH` | Путь к Excel файлу | ❌ Нет |
 | `EMAIL_MAIN` | Email для получения leads.xlsx | ❌ Нет |
 | `SMTP_HOST` | SMTP сервер (по умолчанию smtp.gmail.com) | ❌ Нет |
-| `SMTP_PORT` | SMTP порт (по умолчанию 587) | ❌ Нет |
+| `SMTP_PORT` | SMTP порт (по умолчанию 465) | ❌ Нет |
 | `SMTP_PASSWORD` | Пароль для SMTP (App Password для Gmail) | ❌ Нет |
 
 ### Настройка базы знаний
