@@ -1623,6 +1623,9 @@ async def _process_faq_query(
                 await update_user_profile(user_id, phone=phone)
                 logger.info(f"Получен телефон: {phone}")
                 
+                # Отправляем стикер ожидания после получения телефона
+                phone_waiting_sticker = await _send_waiting_sticker(message)
+                
                 # Удаляем все нерелевантные сообщения и ответы на них перед завершением
                 if invalid_messages and message and message.chat:
                     for msg_id in invalid_messages:
@@ -1658,7 +1661,7 @@ async def _process_faq_query(
                 await _answer_with_sticker_cleanup(
                     message,
                     completion_message,
-                    waiting_sticker_message,
+                    phone_waiting_sticker,  # Используем стикер, отправленный после получения телефона
                     parse_mode=ParseMode.HTML
                 )
                 await save_chat_message(user_id, "assistant", completion_message)
