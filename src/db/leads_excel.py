@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 def _get_excel_file_path() -> str:
     """
     Получить путь к Excel файлу leads.xlsx.
-    
+
     Returns:
         Путь к файлу (по умолчанию в корне проекта)
     """
@@ -36,11 +36,11 @@ def _get_excel_file_path() -> str:
 def _sync_save_to_excel(profile: UserProfile, name_sys: str = "") -> Optional[str]:
     """
     Синхронная функция для сохранения данных лида в Excel файл.
-    
+
     Args:
         profile: Профиль пользователя из UserProfile
         name_sys: Системное имя пользователя (first_name или username)
-        
+
     Returns:
         Путь к сохраненному файлу или None в случае ошибки
     """
@@ -51,21 +51,21 @@ def _sync_save_to_excel(profile: UserProfile, name_sys: str = "") -> Optional[st
         except ImportError as import_err:
             logger.error(f"❌ Не удалось импортировать openpyxl: {import_err}", exc_info=True)
             raise
-        
+
         excel_path = _get_excel_file_path()
         logger.info(f"📁 Путь к Excel файлу: {excel_path}")
-        
+
         # Создаем директорию, если её нет
         excel_dir = os.path.dirname(excel_path)
         if excel_dir and not os.path.exists(excel_dir):
             os.makedirs(excel_dir, exist_ok=True)
             logger.info(f"📁 Создана директория: {excel_dir}")
-        
+
         # Проверяем, существует ли файл
         file_exists = os.path.exists(excel_path)
         logger.info(f"📄 Файл существует: {file_exists}")
         headers = ["Дата Date", "Статус Status", "Имя Name", "Систем. Имя Name_sys", "Телефон Phone", "Опыт Exp", "Уровень Level", "Цели Goals", "Ранее Before", "Политика Politic"]
-        
+
         if file_exists:
             try:
                 # Загружаем файл без keep_vba, чтобы избежать проблем с повреждением
@@ -106,16 +106,16 @@ def _sync_save_to_excel(profile: UserProfile, name_sys: str = "") -> Optional[st
             worksheet = workbook.active
             # Добавляем заголовки
             worksheet.append(headers)
-        
+
         # Форматируем дату
         date_str = profile.date.strftime("%Y-%m-%d %H:%M:%S") if profile.date else datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-        
+
         # Используем name_sys из профиля, если переданный пустой
         final_name_sys = name_sys or profile.name_sys or ""
-        
+
         # Если Name не указан, используем Name_sys
         final_name = profile.name or final_name_sys or ""
-        
+
         # Собираем данные (все значения, даже пустые, для соответствия структуре)
         row_data = [
             date_str,
@@ -129,7 +129,7 @@ def _sync_save_to_excel(profile: UserProfile, name_sys: str = "") -> Optional[st
             profile.before or "",
             profile.politic or "",
         ]
-        
+
         # Проверяем на дубликаты по всем строкам файла
         # Дубликат = та же комбинация статуса, имени, системного имени и телефона
         is_duplicate = False
@@ -141,15 +141,15 @@ def _sync_save_to_excel(profile: UserProfile, name_sys: str = "") -> Optional[st
                     existing_name = str(worksheet.cell(row=row_idx, column=3).value or "").strip()
                     existing_name_sys = str(worksheet.cell(row=row_idx, column=4).value or "").strip()
                     existing_phone = str(worksheet.cell(row=row_idx, column=5).value or "").strip()
-                    
+
                     new_status = str(row_data[1]).strip()
                     new_name = str(row_data[2]).strip()
                     new_name_sys = str(row_data[3]).strip()
                     new_phone = str(row_data[4]).strip()
-                    
+
                     # Считаем дубликатом, если статус, имя, системное имя и телефон совпадают
-                    if (existing_status == new_status and 
-                        existing_name == new_name and 
+                    if (existing_status == new_status and
+                        existing_name == new_name and
                         existing_name_sys == new_name_sys and
                         existing_phone == new_phone and
                         new_status and new_name and new_name_sys and new_phone):  # Только если все четыре поля заполнены
@@ -162,15 +162,15 @@ def _sync_save_to_excel(profile: UserProfile, name_sys: str = "") -> Optional[st
                 except Exception as e:
                     logger.warning(f"Ошибка при проверке дубликата в строке {row_idx}: {e}")
                     continue
-        
+
         if is_duplicate:
             logger.info(f"⏭️ Дубликат не добавлен в Excel для пользователя {profile.tg_user_id}")
             return None  # Не добавляем дубликат, не отправляем email
-        
+
         # Добавляем строку
         logger.debug(f"Добавление строки в Excel: {row_data}")
         worksheet.append(row_data)
-        
+
         # Применяем форматирование ко всем ячейкам
         # Создаем стили
         font = Font(size=12)
@@ -181,21 +181,21 @@ def _sync_save_to_excel(profile: UserProfile, name_sys: str = "") -> Optional[st
             top=Side(style='thin'),
             bottom=Side(style='thin')
         )
-        
+
         # Применяем форматирование ко всем ячейкам в файле
         for row in worksheet.iter_rows(min_row=1, max_row=worksheet.max_row, min_col=1, max_col=worksheet.max_column):
             for cell in row:
                 cell.font = font
                 cell.alignment = alignment
                 cell.border = thin_border
-        
+
         # Сохраняем файл с повторными попытками
         max_retries = 5
         retry_delay = 0.5  # секунды
-        
+
         saved_successfully = False
         temp_path = excel_path + ".tmp"
-        
+
         # Сначала пытаемся сохранить напрямую в основной файл
         for attempt in range(1, max_retries + 1):
             try:
@@ -234,7 +234,7 @@ def _sync_save_to_excel(profile: UserProfile, name_sys: str = "") -> Optional[st
             except Exception as save_error:
                 logger.error(f"❌ Ошибка при сохранении файла {excel_path}: {save_error}", exc_info=True)
                 raise
-        
+
         if saved_successfully:
             final_path = excel_path if os.path.exists(excel_path) else temp_path
             logger.info(
@@ -244,7 +244,7 @@ def _sync_save_to_excel(profile: UserProfile, name_sys: str = "") -> Optional[st
             )
             return final_path
         return None
-        
+
     except ImportError as import_err:
         logger.error(f"❌ Библиотека openpyxl не установлена или не может быть импортирована: {import_err}", exc_info=True)
         raise
@@ -257,7 +257,7 @@ async def save_lead_to_excel(profile: UserProfile, name_sys: str = "") -> None:
     """
     Асинхронная функция для сохранения данных лида в Excel файл.
     После успешного сохранения отправляет файл на email из EMAIL_MAIN.
-    
+
     Args:
         profile: Профиль пользователя из UserProfile
         name_sys: Системное имя пользователя (first_name или username)
@@ -268,7 +268,7 @@ async def save_lead_to_excel(profile: UserProfile, name_sys: str = "") -> None:
         loop = asyncio.get_event_loop()
         saved_file_path = await loop.run_in_executor(None, _sync_save_to_excel, profile, name_sys)
         logger.info(f"✅ Успешно завершено сохранение в Excel для пользователя {profile.tg_user_id}")
-        
+
         # Отправляем файл на email после успешного сохранения
         if saved_file_path:
             try:
