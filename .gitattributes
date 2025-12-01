@@ -1,24 +1,42 @@
-# Устанавливаем окончания строк для всех файлов
+# Auto detect text files and perform LF normalization
 * text=auto
 
-# Python файлы - всегда LF (Unix стиль)
+# Python files - always use LF
 *.py text eol=lf
+*.pyw text eol=lf
 
-# Конфигурационные файлы
+# Shell scripts - always use LF
+*.sh text eol=lf
+*.bash text eol=lf
+
+# YAML files
 *.yml text eol=lf
 *.yaml text eol=lf
-*.json text eol=lf
-*.md text eol=lf
-*.txt text eol=lf
-*.sh text eol=lf
 
-# Исключаем бинарные файлы
-*.db binary
-*.xlsx binary
+# JSON files
+*.json text eol=lf
+
+# Markdown files
+*.md text eol=lf
+
+# Config files
+*.ini text eol=lf
+*.conf text eol=lf
+*.env text eol=lf
+
+# Docker files
+Dockerfile text eol=lf
+docker-compose.yml text eol=lf
+*.dockerfile text eol=lf
+
+# Binary files
 *.pdf binary
+*.png binary
 *.jpg binary
 *.jpeg binary
-*.png binary
 *.gif binary
 *.ico binary
+*.db binary
+*.xlsx binary
+*.xls binary
 
