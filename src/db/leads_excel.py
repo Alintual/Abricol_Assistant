@@ -198,8 +198,8 @@ def _sync_save_to_excel(profile: UserProfile, name_sys: str = "") -> Optional[st
         
         # Сначала пытаемся сохранить напрямую в основной файл
         for attempt in range(1, max_retries + 1):
-        try:
-            workbook.save(excel_path)
+            try:
+                workbook.save(excel_path)
                 saved_successfully = True
                 break
             except PermissionError:
@@ -284,4 +284,3 @@ async def save_lead_to_excel(profile: UserProfile, name_sys: str = "") -> None:
     except Exception as e:
         logger.error(f"❌ Ошибка при запуске сохранения в Excel для пользователя {profile.tg_user_id}: {e}", exc_info=True)
         raise
-
