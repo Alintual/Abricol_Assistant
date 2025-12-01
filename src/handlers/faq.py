@@ -1263,7 +1263,7 @@ async def _show_phase4_booking_window(
             "===📝З А П И С Ь===\n"
             "Предлагаю следующие варианты:\n"
             "👉 Запишитесь САМОСТОЯТЕЛЬНО, позвонив по телефону школы 📱 +7 983 205 2230.\n"
-            "👉Оставьте свои контакты - ИМЯ и ТЕЛЕФОН, тогда я сделаю запись за Вас 😎.\n"
+            "👉 Оставьте свои контакты - ИМЯ и ТЕЛЕФОН, тогда я сделаю запись за Вас 😎.\n"
             "<b>Что выбираете?</b>"
         )
         
@@ -1398,11 +1398,12 @@ async def _process_faq_query(
             # Если попыток больше 2, возвращаемся к Фазе 1
             if anketa_retry_count > 2:
                 logger.warning(f"Пользователь {user_id} не смог ответить на вопрос {anketa_question} после {anketa_retry_count} попыток")
-                # Удаляем все нерелевантные сообщения перед выходом
+                # Удаляем все нерелевантные сообщения (включая ответы бота) перед выходом
                 if invalid_messages and message and message.chat:
                     for msg_id in invalid_messages:
                         try:
                             await message.bot.delete_message(chat_id=message.chat.id, message_id=msg_id)
+                            logger.info(f"Удалено нерелевантное сообщение {msg_id} для пользователя {user_id}")
                         except Exception as e:
                             logger.warning(f"Не удалось удалить сообщение {msg_id}: {e}")
                 await state.update_data(
@@ -1429,17 +1430,21 @@ async def _process_faq_query(
             }
             
             retry_message = f"💤 Простите?\n\n{question_texts.get(anketa_question, '')}"
-            await _answer_with_sticker_cleanup(
+            sent_message = await _answer_with_sticker_cleanup(
                 message,
                 retry_message,
                 waiting_sticker_message,
                 parse_mode=ParseMode.HTML
             )
+            # Сохраняем ID ответа бота для последующего удаления
+            if sent_message and sent_message.message_id:
+                invalid_messages.append(sent_message.message_id)
+                await state.update_data(anketa_invalid_messages=invalid_messages)
             await save_chat_message(user_id, "assistant", retry_message)
             logger.info(f"Ответ пользователя {user_id} на вопрос {anketa_question} не релевантен: {validation_reason}. Попытка {anketa_retry_count}")
             return
         
-        # Если ответ валиден, удаляем все нерелевантные сообщения
+        # Если ответ валиден, удаляем все нерелевантные сообщения (включая ответы бота)
         if invalid_messages and message and message.chat:
             for msg_id in invalid_messages:
                 try:
@@ -1626,7 +1631,7 @@ async def _process_faq_query(
                 # Отправляем стикер ожидания после получения телефона
                 phone_waiting_sticker = await _send_waiting_sticker(message)
                 
-                # Удаляем все нерелевантные сообщения и ответы на них перед завершением
+                # Удаляем все нерелевантные сообщения (включая ответы бота) перед завершением
                 if invalid_messages and message and message.chat:
                     for msg_id in invalid_messages:
                         try:
@@ -3582,7 +3587,7 @@ async def handle_phase4_button(callback: CallbackQuery, state: FSMContext) -> No
             state_data = await state.get_data()
             invalid_messages = state_data.get("phase4_invalid_messages", [])
             
-            # Удаляем нерелевантные сообщения перед отменой
+            # Удаляем нерелевантные сообщения (включая ответы бота) перед отменой
             if invalid_messages and callback.message and callback.message.chat:
                 for msg_id in invalid_messages:
                     try:
