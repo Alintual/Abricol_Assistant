@@ -295,7 +295,11 @@ def extract_images_from_pdfs() -> dict:
 
 
 def create_structured_texts() -> None:
-    """Шаг 2: Создает структурированные txt файлы из PDF."""
+    """Шаг 2: Создает структурированные txt файлы из PDF.
+    
+    Если structured файл уже существует, он не будет перезаписан.
+    Для пересоздания файла удалите его вручную перед запуском.
+    """
     print("\n=== Шаг 2: Создание структурированных текстов ===")
     
     pdf_files = [f for f in os.listdir(DATA_DIR) if f.lower().endswith(".pdf")]
@@ -306,20 +310,36 @@ def create_structured_texts() -> None:
     
     print(f"Обработка PDF файлов: {len(pdf_files)}")
     
+    skipped_count = 0
+    created_count = 0
+    
     for pdf_file in sorted(pdf_files):
         try:
-            print(f"  Обработка: {pdf_file}")
-            structured_text = extract_and_structure_pdf(pdf_file)
-            
             output_filename = pdf_file.replace(".pdf", "_structured.txt")
             output_path = os.path.join(STRUCTURED_DIR, output_filename)
+            
+            # Проверяем, существует ли уже structured файл
+            if os.path.exists(output_path):
+                print(f"  Пропущен (файл уже существует): {output_filename}")
+                skipped_count += 1
+                continue
+            
+            print(f"  Обработка: {pdf_file}")
+            structured_text = extract_and_structure_pdf(pdf_file)
             
             with open(output_path, "w", encoding="utf-8") as f:
                 f.write(structured_text)
             
             print(f"    Сохранен: {output_filename}")
+            created_count += 1
         except Exception as e:
             print(f"    Ошибка при обработке {pdf_file}: {e}")
+    
+    if skipped_count > 0:
+        print(f"\n  Пропущено файлов (уже существуют): {skipped_count}")
+        print(f"  Для пересоздания удалите соответствующие *_structured.txt файлы")
+    if created_count > 0:
+        print(f"  Создано новых файлов: {created_count}")
 
 
 def build_text_index() -> None:
