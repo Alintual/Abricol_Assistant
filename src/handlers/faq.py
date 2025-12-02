@@ -112,10 +112,10 @@ PRIMARY_SOURCE_TELEGRAM_LIMIT = 3500
 def classify_topic(query: str) -> tuple[str, float]:
     """
     Классифицирует запрос по темам общения.
-    
+
     Args:
         query: Текст запроса пользователя
-        
+
     Returns:
         tuple: (topic, confidence) где topic может быть:
             - "school" (Тема 1: Информация по школе)
@@ -125,31 +125,31 @@ def classify_topic(query: str) -> tuple[str, float]:
     """
     if not query:
         return "unknown", 0.0
-    
+
     query_lower = query.lower()
-    
+
     # Подсчитываем совпадения по каждой теме
     school_matches = sum(1 for kw in SCHOOL_TOPIC_KEYWORDS if kw in query_lower)
     rules_matches = sum(1 for kw in RULE_INTENT_KEYWORDS if kw in query_lower)
-    
+
     # Исключаем слова из Темы 2, которые могут быть в Теме 1
     # Например, "игр" может быть и в "играть на бильярде" и в "правила игры"
     # Но если есть специфичные слова правил - это точно Тема 2
     rules_specific = ["правил", "требован", "техническ", "корона", "международ", "фбср"]
     has_rules_specific = any(kw in query_lower for kw in rules_specific)
-    
+
     # Если есть специфичные слова правил - это определенно Тема 2
     if has_rules_specific:
         return "rules", min(1.0, 0.5 + rules_matches * 0.1)
-    
+
     # Если больше совпадений по школе - Тема 1
     if school_matches > rules_matches:
         return "school", min(1.0, 0.3 + school_matches * 0.15)
-    
+
     # Если больше совпадений по правилам - Тема 2
     if rules_matches > school_matches:
         return "rules", min(1.0, 0.3 + rules_matches * 0.15)
-    
+
     # Если равное количество или нет совпадений - неопределенная тема
     return "unknown", 0.0
 
@@ -227,9 +227,9 @@ def is_rule_intent(query: str) -> bool:
     """
     if not query or len(query.strip()) < 3:
         return False
-    
+
     lowered = query.lower().strip()
-    
+
     # Исключаем запросы, которые точно не про правила
     # (вопросы о боте, приветствия, общие вопросы)
     excluded_patterns = [
@@ -241,18 +241,18 @@ def is_rule_intent(query: str) -> bool:
     for pattern in excluded_patterns:
         if pattern in lowered:
             return False
-    
+
     # Проверяем ключевые слова, но только если запрос достаточно информативен
     # Для коротких запросов (менее 10 символов) требуем более специфичные ключевые слова
     has_rule_keyword = any(word in lowered for word in RULE_INTENT_KEYWORDS)
-    
+
     if len(lowered) < 10:
         # Для коротких запросов требуем более специфичные ключевые слова
         # Включаем "аксес" и "оборуд" для технических требований
         specific_keywords = ["правил", "требован", "техническ", "корона", "международ", "пирамида", "фбср", "аксес", "оборуд"]
         has_specific = any(kw in lowered for kw in specific_keywords)
         return has_specific and has_rule_keyword
-    
+
     return has_rule_keyword
 
 
@@ -307,7 +307,7 @@ def _truncate_primary_source_text(text: str) -> str:
     max_length = PRIMARY_SOURCE_TELEGRAM_LIMIT - 70
     if len(text) <= max_length:
         return text
-    
+
     # Находим последний перенос строки перед лимитом
     trimmed = text[:max_length]
     last_newline = trimmed.rfind('\n')
@@ -320,7 +320,7 @@ def _truncate_primary_source_text(text: str) -> str:
             trimmed = text[:last_space].rstrip()
         else:
             trimmed = trimmed.rstrip()
-    
+
     return f"{trimmed}\n… (фрагмент сокращён, превышен лимит Telegram)"
 
 
@@ -383,7 +383,7 @@ def _normalize_primary_body(text: str) -> str:
             if current:
                 paragraphs.append(" ".join(current))
                 current = []
-            
+
             # Собираем все строки пункта списка в один параграф
             list_item_lines = [stripped]
             i += 1
@@ -399,7 +399,7 @@ def _normalize_primary_body(text: str) -> str:
                 # Иначе это продолжение текущего пункта списка
                 list_item_lines.append(next_line)
                 i += 1
-            
+
             # Объединяем все строки пункта списка в один параграф
             paragraphs.append(" ".join(list_item_lines))
             continue
@@ -430,26 +430,26 @@ def _normalize_primary_body(text: str) -> str:
     # Объединяем строки внутри параграфа пробелом, но сохраняем переносы между параграфами
     cleaned = re.sub(r"[ \t]+", " ", cleaned)  # Только пробелы и табы, не переносы строк
     cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)  # Максимум 2 переноса строки подряд
-    
+
     # Исправляем случаи, когда текст обрывается на полуслове из-за неправильного разбиения
     # Проблема: короткие строки (1-3 буквы) могут быть разорванными словами
     # Объединяем их с предыдущей или следующей строкой
     lines = cleaned.split('\n')
     fixed_lines = []
     i = 0
-    
+
     while i < len(lines):
         line = lines[i]
         stripped = line.strip()
-        
+
         if not stripped:
             fixed_lines.append(line)
             i += 1
             continue
-        
+
         # Проверяем, является ли строка пунктом списка
         is_list_item = enum_pattern.match(stripped)
-        
+
         # Если строка короткая (1-3 буквы) и не пункт списка
         if not is_list_item and len(stripped) <= 3:
             # Проверяем предыдущую строку - если она заканчивается коротким словом
@@ -468,7 +468,7 @@ def _normalize_primary_body(text: str) -> str:
                             fixed_lines[-1] = fixed_lines[-1].rstrip() + ' ' + stripped
                             i += 1
                             continue
-            
+
             # Если не объединили с предыдущей, проверяем следующую строку
             if i + 1 < len(lines):
                 next_stripped = lines[i + 1].strip()
@@ -478,12 +478,12 @@ def _normalize_primary_body(text: str) -> str:
                     fixed_lines.append(stripped + ' ' + next_stripped)
                     i += 2
                     continue
-        
+
         fixed_lines.append(line)
         i += 1
-    
+
     cleaned = '\n'.join(fixed_lines)
-    
+
     # Дополнительная проверка: объединяем строки, которые заканчиваются короткими словами
     # и продолжаются на следующей строке
     lines = cleaned.split('\n')
@@ -492,14 +492,14 @@ def _normalize_primary_body(text: str) -> str:
     while i < len(lines):
         line = lines[i]
         stripped = line.strip()
-        
+
         if not stripped:
             final_lines.append(line)
             i += 1
             continue
-        
+
         is_list_item = enum_pattern.match(stripped)
-        
+
         # Если строка заканчивается коротким словом (1-3 буквы), проверяем следующую
         # Это может быть часть пункта списка или обычного текста
         if i + 1 < len(lines):
@@ -519,10 +519,10 @@ def _normalize_primary_body(text: str) -> str:
                             final_lines.append(stripped.rstrip() + ' ' + next_stripped)
                             i += 2
                             continue
-        
+
         final_lines.append(line)
         i += 1
-    
+
     cleaned = '\n'.join(final_lines)
     return cleaned.strip()
 
@@ -541,11 +541,11 @@ def _truncate_to_single_point(text: str, header_line: str | None = None, rule_nu
     """
     if not text:
         return text
-    
+
     lines = text.split('\n')
     if not lines:
         return text
-    
+
     # Определяем номер первого пункта из header_line или rule_number
     first_point_number = None
     if header_line:
@@ -556,47 +556,47 @@ def _truncate_to_single_point(text: str, header_line: str | None = None, rule_nu
     elif rule_number:
         # Используем rule_number
         first_point_number = rule_number.strip().rstrip('.')
-    
+
     # Если не нашли номер из header_line/rule_number, пытаемся найти в первой строке текста
     if not first_point_number:
         first_line = lines[0].strip() if lines else ""
         match = re.match(r'^(\d+(?:\.\d+)*)', first_line)
         if match:
             first_point_number = match.group(1)
-    
+
     if not first_point_number:
         # Если не нашли номер, возвращаем весь текст
         return text
-    
+
     # Определяем уровень первого пункта (количество точек в номере)
     first_level = first_point_number.count('.') + 1
-    
+
     # Ищем следующий пункт того же или более высокого уровня
     result_lines = [lines[0]]  # Всегда включаем первую строку
-    
+
     for i in range(1, len(lines)):
         line = lines[i].strip()
         if not line:
             # Пустые строки включаем, но проверяем следующую строку
             result_lines.append(lines[i])
             continue
-        
+
         # Проверяем, является ли строка началом нового пункта/подпункта
         # Паттерн: номер пункта в начале строки (например, "1.", "1.1.", "2.", "2.1." и т.д.)
         point_match = re.match(r'^(\d+(?:\.\d+)*)(?:\.)?\s+', line)
         if point_match:
             current_point_number = point_match.group(1)
             current_level = current_point_number.count('.') + 1
-            
+
             # Если это пункт того же или более высокого уровня - останавливаемся
             if current_level <= first_level:
                 # Проверяем, что это действительно другой пункт (не продолжение текущего)
                 if current_point_number != first_point_number:
                     break
-        
+
         # Включаем строку в результат
         result_lines.append(lines[i])
-    
+
     return '\n'.join(result_lines)
 
 
@@ -719,7 +719,7 @@ def _ensure_cta_spacing(text: str) -> str:
     if first_non_empty_after_cta is not None:
         # Подсчитываем пустые строки между СТА и основным текстом
         empty_lines_count = first_non_empty_after_cta - cta_end - 1
-        
+
         # Если пустых строк больше одной, оставляем только одну
         if empty_lines_count > 1:
             # Удаляем лишние пустые строки, оставляя только одну
@@ -812,11 +812,11 @@ def _strip_unwanted_symbols(text: str) -> str:
 def _validate_anketa_answer(answer: str, question_num: int) -> tuple[bool, str]:
     """
     Проверяет релевантность ответа на вопрос анкеты без использования LLM.
-    
+
     Args:
         answer: Ответ пользователя
         question_num: Номер вопроса (1-4)
-    
+
     Returns:
         tuple[bool, str]: (is_valid, reason)
         - is_valid: True если ответ релевантен, False если нет
@@ -824,10 +824,10 @@ def _validate_anketa_answer(answer: str, question_num: int) -> tuple[bool, str]:
     """
     if not answer:
         return False, "Ответ пустой"
-    
+
     answer_lower = answer.lower().strip()
     answer_length = len(answer_lower)
-    
+
     # Для вопроса 4 (Да/Нет) разрешаем короткие ответы "да"/"нет"
     if question_num == 4:
         yes_words = ["да", "yes"]
@@ -841,7 +841,7 @@ def _validate_anketa_answer(answer: str, question_num: int) -> tuple[bool, str]:
         # Проверка на слишком короткий ответ (меньше 3 символов) для остальных вопросов
         if answer_length < 3:
             return False, "Слишком короткий ответ"
-    
+
     # Проверка на явные признаки непонимания или отказа отвечать
     skip_phrases = [
         "не знаю", "не понимаю", "не понял", "не поняла",
@@ -850,22 +850,22 @@ def _validate_anketa_answer(answer: str, question_num: int) -> tuple[bool, str]:
         "?", "??", "???",  # Только знаки вопроса
         "что", "как", "почему", "зачем",  # Вопросы вместо ответов
     ]
-    
+
     # Если ответ состоит только из знаков вопроса или начинается с вопроса
     if answer_lower.strip() in ["?", "??", "???"] or answer_lower.startswith("?"):
         return False, "Ответ содержит только вопрос"
-    
+
     # Проверка на попытку задать свой вопрос вместо ответа
     question_words = ["что", "как", "почему", "зачем", "когда", "где", "кто"]
     if any(answer_lower.startswith(word + " ") for word in question_words):
         return False, "Ответ начинается с вопроса"
-    
+
     # Проверка на явные фразы пропуска
     if any(phrase in answer_lower for phrase in skip_phrases):
         # Но если это не единственное содержимое, то может быть нормально
         if answer_length < 20:  # Если короткий и содержит skip_phrase - отклоняем
             return False, "Ответ содержит фразу непонимания"
-    
+
     # Специфичные проверки для каждого вопроса
     if question_num == 1:  # Опыт игры
         # Ключевые слова, связанные с опытом
@@ -879,7 +879,7 @@ def _validate_anketa_answer(answer: str, question_num: int) -> tuple[bool, str]:
             # Если нет ключевых слов, но ответ достаточно длинный - принимаем
             if answer_length < 10:
                 return False, "Ответ не содержит информации об опыте"
-    
+
     elif question_num == 2:  # Уровень подготовки
         level_keywords = [
             "уровень", "новичок", "начинающ", "средн", "продвинут", "профессионал",
@@ -889,7 +889,7 @@ def _validate_anketa_answer(answer: str, question_num: int) -> tuple[bool, str]:
         if not any(keyword in answer_lower for keyword in level_keywords):
             if answer_length < 8:
                 return False, "Ответ не содержит информации об уровне"
-    
+
     elif question_num == 3:  # Цели обучения
         goals_keywords = [
             "хочу", "желаю", "нужно", "надо", "цель", "цели", "научиться", "изучить",
@@ -899,21 +899,21 @@ def _validate_anketa_answer(answer: str, question_num: int) -> tuple[bool, str]:
         if not any(keyword in answer_lower for keyword in goals_keywords):
             if answer_length < 8:
                 return False, "Ответ не содержит информации о целях"
-    
+
     elif question_num == 4:  # Обучение ранее (Да/Нет)
         # Для 4-го вопроса проверка проще - ищем "да"/"нет" или похожие слова
         yes_words = ["да", "yes", "учил", "обучал", "училась", "обучалась", "был", "была"]
         no_words = ["нет", "no", "не учил", "не обучал", "не училась", "не обучалась", "не был", "не была"]
-        
+
         has_yes = any(word in answer_lower for word in yes_words)
         has_no = any(word in answer_lower for word in no_words)
-        
+
         if not (has_yes or has_no):
             # Если нет явного да/нет, но ответ короткий - отклоняем
             if answer_length < 5:
                 return False, "Ответ не содержит явного согласия или отказа"
             # Если ответ длинный, возможно пользователь объясняет - принимаем
-    
+
     # Если все проверки пройдены
     return True, ""
 
@@ -922,43 +922,43 @@ def _format_pointers_and_bold(text: str) -> str:
     """Форматирует фразы типа '👉текст:', '📅 текст:' (с любым эмодзи) и '*текст*'."""
     if not text:
         return text
-    
+
     # Сначала обрабатываем фразы типа "*текст*" - заменяем на <b>текст</b> ДО обработки эмодзи
     # Это важно, чтобы не перепутать звездочки с другими символами
     def replace_bold(match):
         content = match.group(1).strip()
         # Заменяем *текст* на <b>текст</b>
         return f'<b>{content}</b>'
-    
+
     # Заменяем *текст* на <b>текст</b>
     # Ищем одиночные звездочки, которые не являются частью двойных
     # Паттерн: *текст*, где текст может содержать пробелы, буквы, цифры и знаки препинания
     # Используем нежадный поиск (?) для корректной обработки нескольких вхождений
     # Важно: обрабатываем до того, как другие функции могут удалить звездочки
     text = re.sub(r'(?<!\*)\*([^*]+?)\*(?!\*)', replace_bold, text)
-    
+
     # Удаляем 👉 если после него идет другое эмодзи (например "👉 📚 Курсы:" -> "📚 Курсы:")
     # Паттерн для эмодзи
     emoji_pattern = r'[\U0001F300-\U0001F9FF\U00002600-\U000027BF\U0001F600-\U0001F64F\U0001F680-\U0001F6FF\U0001F1E0-\U0001F1FF\U00002700-\U000027BF\U0001F900-\U0001F9FF\U00002600-\U000026FF\U00002700-\U000027BF\U00002000-\U0000206F\U00002070-\U0000209F\U00002190-\U000021FF\U00002B00-\U00002BFF]'
     # Удаляем 👉 если после него (с пробелами) идет другое эмодзи
     text = re.sub(r'👉\s+({})'.format(emoji_pattern), r'\1', text)
-    
+
     # Обрабатываем фразы типа "📅 текст:" или "👉текст:" - переносим на новую строку, если они не на новой строке
     # Ищем любой символ, который может быть эмодзи (широкий диапазон Unicode)
-    
+
     # Обрабатываем фразы с эмодзи в начале, за которым следует текст и двоеточие
     # Ищем паттерн: эмодзи + пробелы (опционально) + текст + двоеточие
     # Улучшенный паттерн: эмодзи может быть один или несколько подряд
     text = re.sub(r'([^\n])({}+\s*[^\n:]+:)'.format(emoji_pattern), r'\1\n\2', text)
     # Убеждаемся, что эмодзи в начале строки не имеет лишних пробелов перед ним
     text = re.sub(r'(\n|^)\s+({}+\s*[^\n:]+:)'.format(emoji_pattern), r'\1\2', text, flags=re.MULTILINE)
-    
+
     # Переносим <b>текст</b> на новую строку, если они не на новой строке
     # Ищем <b>текст</b> которые идут после текста на той же строке
     text = re.sub(r'([^\n])(<b>[^<]+</b>)', r'\1\n\2', text)
     # Убеждаемся, что <b>текст</b> в начале строки не имеет лишних пробелов
     text = re.sub(r'(\n|^)\s+(<b>[^<]+</b>)', r'\1\2', text, flags=re.MULTILINE)
-    
+
     return text
 
 
@@ -988,7 +988,7 @@ def _highlight_search_terms(text: str, found_words: list[str], found_phrases: li
     """
     Выделяет жирным найденные слова и фразы в тексте используя HTML-теги <b>.
     Работает для всех файлов проекта.
-    
+
     Args:
         text: Текст для выделения
         found_words: Список найденных слов
@@ -996,9 +996,9 @@ def _highlight_search_terms(text: str, found_words: list[str], found_phrases: li
     """
     if not text or (not found_words and not found_phrases):
         return text
-    
+
     result = text
-    
+
     # Сначала выделяем фразы (в порядке убывания длины, чтобы более длинные фразы обрабатывались первыми)
     sorted_phrases = sorted(found_phrases, key=len, reverse=True)
     for phrase in sorted_phrases:
@@ -1007,16 +1007,16 @@ def _highlight_search_terms(text: str, found_words: list[str], found_phrases: li
         # Находим все вхождения фразы (регистронезависимо)
         pattern = re.compile(re.escape(phrase), re.IGNORECASE)
         result = pattern.sub(lambda m: f"<b>{m.group(0)}</b>", result)
-    
+
     # Затем выделяем отдельные слова (обычный поиск подстроки)
     for word in found_words:
         if not word or len(word) < 2:
             continue
-        
+
         # Для всех слов ищем подстроку (без границ слов), чтобы находить части слов
         word_pattern = re.escape(word)
         pattern = re.compile(word_pattern, re.IGNORECASE)
-        
+
         def replace_word(match):
             matched_text = match.group(0)
             start = match.start()
@@ -1029,9 +1029,9 @@ def _highlight_search_terms(text: str, found_words: list[str], found_phrases: li
             if open_tags > close_tags:
                 return matched_text  # Уже внутри выделенного фрагмента, не выделяем
             return f"<b>{matched_text}</b>"
-        
+
         result = pattern.sub(replace_word, result)
-    
+
     return result
 
 
@@ -1090,7 +1090,7 @@ def _format_primary_source_fragment(
             display_body = f"{rule_prefix} {display_body.lstrip()}"
 
     lines: list[str] = [header]
-    
+
     # Добавляем название раздела всегда, если оно есть
     # (название раздела должно показываться для контекста)
     if section:
@@ -1103,17 +1103,17 @@ def _format_primary_source_fragment(
     if display_body:
         display_body = _normalize_primary_body(display_body)
         display_body = _remove_generic_section_lines(display_body)
-        
+
         # ОБРЕЗАЕМ текст до первого пункта/подпункта, чтобы в окне показывался только один пункт
         # Это соответствует общим правилам формирования окон
         display_body = _truncate_to_single_point(display_body, header_line, rule_number)
-        
+
         # Выделяем жирным найденные слова и фразы для всех файлов
         found_words = fragment.get('found_words', [])
         found_phrases = fragment.get('found_phrases', [])
         if found_words or found_phrases:
             display_body = _highlight_search_terms(display_body, found_words, found_phrases)
-        
+
         if not header_line and lines and lines[-1] != "":
             lines.append("")
         lines.append(display_body)
@@ -1132,44 +1132,44 @@ def _get_figures_for_fragment(fragment: dict, main_source: str | None) -> list[s
     figures: list[str] = []
     if not isinstance(fragment, dict):
         return figures
-    
+
     fragment_source = fragment.get("source") or main_source
     if not fragment_source:
         return figures
-    
+
     # Проверяем ключевые слова только в тексте релевантного блока (без section)
     fragment_text = (fragment.get("text") or "").lower()
     if not fragment_text:
         return figures
-    
+
     # Проверяем для Корона
     if fragment_source == CORONA_SOURCE or _normalize_source_name(fragment_source) == _normalize_source_name(CORONA_SOURCE):
         corona_keywords = ("расстанов", "располож", "ряд")
         if any(keyword in fragment_text for keyword in corona_keywords):
             figures.append("Рис.2.1.2.1")
-    
+
     # Проверяем для Технических требований
     if fragment_source == TECHNICAL_REQUIREMENTS_SOURCE or _normalize_source_name(fragment_source) == _normalize_source_name(TECHNICAL_REQUIREMENTS_SOURCE):
         tech_fig_221_keywords = ("коридор", "радиус", "размер луз", "закруглен", "угол", "ширин", "створ", "средн луз", "углов луз")
         if any(keyword in fragment_text for keyword in tech_fig_221_keywords):
             figures.append("Рис.2.2.1")
-        
+
         tech_fig_222_keywords = ("валик", "резин", "кромк борт", "наклон")
         if any(keyword in fragment_text for keyword in tech_fig_222_keywords):
             figures.append("Рис.2.2.2")
-        
+
         tech_fig_223_224_keywords = ("светильник", "свет зон", "освещ", "ламп", "плафон")
         if any(keyword in fragment_text for keyword in tech_fig_223_224_keywords):
             figures.extend(["Рис.2.2.3", "Рис.2.2.4"])
-        
+
         # Рис.2.2.5: проверяем наличие "игров зон" в тексте (разные формы: игровая зона, игровой зоны и т.д.)
         if re.search(r"игров\w*\s+зон\w*", fragment_text):
             figures.append("Рис.2.2.5")
-        
+
         tech_fig_226_keywords = ("аксес", "табло", "полк", "стол-полк", "табло-счет")
         if any(keyword in fragment_text for keyword in tech_fig_226_keywords):
             figures.append("Рис.2.2.6")
-    
+
     return _unique_preserving(figures)
 
 
@@ -1212,7 +1212,7 @@ async def _send_waiting_sticker(message: Message) -> Message | None:
     """
     global WAITING_STICKER_FILE_ID
     logger = logging.getLogger(__name__)
-    
+
     # Сначала пробуем использовать сохраненный file_id
     if WAITING_STICKER_FILE_ID:
         try:
@@ -1221,7 +1221,7 @@ async def _send_waiting_sticker(message: Message) -> Message | None:
             return sticker_message
         except Exception as e:
             logger.warning(f"Не удалось отправить стикер по сохраненному file_id: {e}")
-    
+
     # Популярные анимированные эмодзи-стикеры с глазами из стандартных наборов Telegram
     # Это стикеры из набора "Animated Emoji" - пробуем несколько вариантов
     # File ID может отличаться в зависимости от бота, но некоторые могут работать
@@ -1232,7 +1232,7 @@ async def _send_waiting_sticker(message: Message) -> Message | None:
         "CAACAgIAAxkBAAIBZGZgZQABAYBkZWQAAUfQZWRkZGQAAQACAgADwDxPAAH4ZWRkZGQAAQACAgADwDxP",
         "CAACAgIAAxkBAAIBZmZgZQABAYFkZWQAAUfQZWRkZGQAAQACAgADwDxPAAH4ZWRkZGQAAQACAgADwDxP",
     ]
-    
+
     # Пробуем отправить стикер по известным file_id
     for sticker_id in POPULAR_ANIMATED_EYES_STICKERS:
         try:
@@ -1243,7 +1243,7 @@ async def _send_waiting_sticker(message: Message) -> Message | None:
             return sticker_message
         except Exception:
             continue
-    
+
     # Если ни один стикер не работает, используем эмодзи как fallback
     # В этом случае пользователь увидит текстовый эмодзи "👀"
     logger.warning("Не удалось отправить анимированный стикер, используем эмодзи как fallback")
@@ -1261,7 +1261,7 @@ async def handle_sticker_for_waiting(message: Message) -> None:
     Когда пользователь отправляет стикер боту, сохраняем его file_id для использования в качестве стикера ожидания.
     """
     global WAITING_STICKER_FILE_ID
-    
+
     if message.sticker:
         sticker = message.sticker
         # Проверяем, что это анимированный стикер (эмодзи-стикер обычно анимированный)
@@ -1296,50 +1296,50 @@ async def _show_intent_selection_window(
 ) -> None:
     """Показать окно выбора намерения (Обучение/Консультация/Продолжить)"""
     logger = logging.getLogger(__name__)
-    
+
     try:
         if not message:
             logger.error("_show_intent_selection_window: message is None")
             return
-        
+
         if not message.from_user:
             logger.error("_show_intent_selection_window: message.from_user is None")
             return
-        
+
         text = (
             "⏸️ <b>Пожалуйста, уточните, что Вы хотите:</b>\n"
             "👉 - Записаться на Обучение\n"
             "👉 - Записаться на Консультацию по телефону\n"
             "👉 - Продолжить общение в чате"
         )
-        
+
         buttons = [
             InlineKeyboardButton(text="🟢 Обучение", callback_data="intent:training"),
             InlineKeyboardButton(text="🟣 Консультация", callback_data="intent:consultation"),
             InlineKeyboardButton(text="▶️ Продолжить", callback_data="intent:continue"),
         ]
-        
+
         markup = InlineKeyboardMarkup(inline_keyboard=[buttons])
-        
+
         # Удаляем стикер ожидания перед показом окна
         await _delete_waiting_sticker(waiting_sticker_message)
-        
+
         await message.answer(text, reply_markup=markup, parse_mode=ParseMode.HTML)
         # Сохраняем исходный запрос пользователя для обработки при нажатии "Продолжить"
         original_query = message.text or ""
-        
+
         # ОБНУЛЯЕМ все поля профиля (кроме name_sys) при показе окна намерения
         profile = await get_user_profile(message.from_user.id)
         old_status = (profile.status or "").strip() if profile else ""
         await reset_user_profile_fields(message.from_user.id)
         await state.update_data(
-            intent_selection_shown=True, 
+            intent_selection_shown=True,
             original_query_for_continue=original_query,
             old_status_before_intent=old_status  # Сохраняем старый статус для проверки изменения
         )
-        
+
         await save_chat_message(message.from_user.id, "assistant", text)
-        
+
         logger.info(f"Показано окно выбора намерения для пользователя {message.from_user.id}, поля профиля обнулены")
     except Exception as e:
         logger.error(f"Ошибка в _show_intent_selection_window: {e}", exc_info=True)
@@ -1356,16 +1356,16 @@ async def _show_phase4_booking_window(
 ) -> None:
     """Показать окно записи Фазы 4 с кнопками"""
     logger = logging.getLogger(__name__)
-    
+
     try:
         if not message:
             logger.error("_show_phase4_booking_window: message is None")
             return
-        
+
         if not message.from_user:
             logger.error("_show_phase4_booking_window: message.from_user is None")
             return
-        
+
         text = (
             "===📝З А П И С Ь===\n"
             "Предлагаю следующие варианты:\n"
@@ -1373,23 +1373,23 @@ async def _show_phase4_booking_window(
             "👉 Оставьте свои контакты - ИМЯ и ТЕЛЕФОН, тогда я сделаю запись за Вас 😎.\n"
             "<b>Что выбираете?</b>"
         )
-        
+
         buttons = [
             InlineKeyboardButton(text="📞 САМ", callback_data="phase4:self"),
             InlineKeyboardButton(text="👨‍🎓 КОНТАКТЫ", callback_data="phase4:contacts"),
             InlineKeyboardButton(text="❌ Отмена", callback_data="phase4:cancel"),
         ]
-        
+
         markup = InlineKeyboardMarkup(inline_keyboard=[buttons])
-        
+
         # Удаляем стикер ожидания перед показом окна
         await _delete_waiting_sticker(waiting_sticker_message)
-        
+
         await message.answer(text, reply_markup=markup, parse_mode=ParseMode.HTML)
         await state.update_data(phase4_window_shown=True)
-        
+
         await save_chat_message(message.from_user.id, "assistant", text)
-        
+
         logger.info(f"Показано окно записи Фазы 4 для пользователя {message.from_user.id}")
     except Exception as e:
         logger.error(f"Ошибка в _show_phase4_booking_window: {e}", exc_info=True)
@@ -1421,7 +1421,7 @@ async def _process_faq_query(
     logger = logging.getLogger(__name__)
 
     user_id = message.from_user.id if message.from_user else 0
-    
+
     # Получаем системное имя пользователя
     name_sys = "друг"
     if message.from_user:
@@ -1429,10 +1429,10 @@ async def _process_faq_query(
             name_sys = message.from_user.first_name
         elif message.from_user.username:
             name_sys = message.from_user.username
-    
+
     # Получаем или создаем профиль пользователя
     profile = await get_or_create_user_profile(user_id, name_sys)
-    
+
     # Получаем текущую фазу из state
     state_data = await state.get_data()
     current_phase = state_data.get("phase", 1)
@@ -1482,26 +1482,26 @@ async def _process_faq_query(
     if current_phase == 2:
         logger.info(f"Пользователь {user_id} в Фазе 2 (Политика) - поиск и LLM отключены")
         return
-    
+
     # Обработка Фазы 3: Отслеживание ответов на вопросы анкеты (ДО блокировки поиска)
     if current_phase == 3 and state_data.get("anketa_started"):
         anketa_question = state_data.get("anketa_question", 1)
         anketa_retry_count = state_data.get("anketa_retry_count", 0)
         invalid_messages = state_data.get("anketa_invalid_messages", [])  # Список ID нерелевантных сообщений
-        
+
         # Валидация ответа
         is_valid, validation_reason = _validate_anketa_answer(user_q, anketa_question)
-        
+
         if not is_valid:
             # Если ответ не релевантен, сохраняем ID текущего сообщения для последующего удаления
             if message and message.message_id:
                 invalid_messages.append(message.message_id)
                 await state.update_data(anketa_invalid_messages=invalid_messages)
-            
+
             # Увеличиваем счетчик попыток
             anketa_retry_count += 1
             await state.update_data(anketa_retry_count=anketa_retry_count)
-            
+
             # Если попыток больше 2, возвращаемся к Фазе 1
             if anketa_retry_count > 2:
                 logger.warning(f"Пользователь {user_id} не смог ответить на вопрос {anketa_question} после {anketa_retry_count} попыток")
@@ -1527,7 +1527,7 @@ async def _process_faq_query(
                 )
                 await save_chat_message(user_id, "assistant", "😕Жаль, что Вы не ответили на все вопросы!\n▶️ Я снова готов к Вашим вопросам.")
                 return
-            
+
             # Задаем вопрос повторно с сообщением "💤 Простите?"
             question_texts = {
                 1: "<b>1. Какой у Вас ОПЫТ игры на бильярде?</b>\n(Например: играю 2 года, новичок, не играл, умею играть, играл в детстве и т.д.)",
@@ -1535,7 +1535,7 @@ async def _process_faq_query(
                 3: "<b>3. Каковы Ваши ЦЕЛИ в обучении?</b>\n(Например: научиться играть, улучшить технику, подготовиться к турниру, освоить правила и т.д.)",
                 4: "<b>4. Учились ли Вы РАНЕЕ в ШБ «Абриколь»?</b>\n(Да или Нет)"
             }
-            
+
             retry_message = f"💤 Простите?\n\n{question_texts.get(anketa_question, '')}"
             sent_message = await _answer_with_sticker_cleanup(
                 message,
@@ -1550,7 +1550,7 @@ async def _process_faq_query(
             await save_chat_message(user_id, "assistant", retry_message)
             logger.info(f"Ответ пользователя {user_id} на вопрос {anketa_question} не релевантен: {validation_reason}. Попытка {anketa_retry_count}")
             return
-        
+
         # Если ответ валиден, удаляем все нерелевантные сообщения (включая ответы бота)
         if invalid_messages and message and message.chat:
             for msg_id in invalid_messages:
@@ -1560,10 +1560,10 @@ async def _process_faq_query(
                 except Exception as e:
                     logger.warning(f"Не удалось удалить сообщение {msg_id}: {e}")
             await state.update_data(anketa_invalid_messages=[])
-        
+
         # Сбрасываем счетчик попыток и сохраняем ответ
         await state.update_data(anketa_retry_count=0)
-        
+
         # Определяем, на какой вопрос отвечает пользователь
         # Вопрос 1: Опыт
         if anketa_question == 1:
@@ -1583,7 +1583,7 @@ async def _process_faq_query(
             )
             await save_chat_message(user_id, "assistant", next_question)
             return  # Выходим, не производя поиск и LLM
-        
+
         # Вопрос 2: Уровень
         elif anketa_question == 2:
             await update_user_profile(user_id, level=user_q)
@@ -1602,7 +1602,7 @@ async def _process_faq_query(
             )
             await save_chat_message(user_id, "assistant", next_question)
             return  # Выходим, не производя поиск и LLM
-        
+
         # Вопрос 3: Цели
         elif anketa_question == 3:
             await update_user_profile(user_id, goals=user_q)
@@ -1621,14 +1621,14 @@ async def _process_faq_query(
             )
             await save_chat_message(user_id, "assistant", next_question)
             return  # Выходим, не производя поиск и LLM
-        
+
         # Вопрос 4: Обучение ранее (Да/Нет)
         elif anketa_question == 4:
             before_value = "Да" if any(word in user_q.lower() for word in ["да", "yes", "учил", "обучал", "училась", "обучалась", "был", "была"]) else "Нет"
             await update_user_profile(user_id, before=before_value)
             await state.update_data(anketa_question=5, anketa_completed=True)
             logger.info(f"Сохранен ответ на вопрос 4 (Обучение ранее): {before_value}")
-            
+
             # Выводим сводку после всех 4 ответов
             profile = await get_user_profile(user_id)
             if profile:
@@ -1644,11 +1644,11 @@ async def _process_faq_query(
 
 😎 <b>Вы большой молодец, анкетирование окончено!</b>
 Ваши ответы сохранены, что поможет нам подобрать для Вас ОПТИМАЛЬНУЮ программу обучения 🔥."""
-                
+
                 # Если Before=Нет, добавляем информацию о приветственном бонусе
                 if profile.before and profile.before.strip().lower() == "нет":
                     summary += "\n\nКроме того, Вам, как новому ученику, полагается приветственный бонус 🎁 - полностью БЕСПЛАТНЫЙ первый урок 1,5 часа."
-                
+
                 await _answer_with_sticker_cleanup(
                     message,
                     summary,
@@ -1656,23 +1656,23 @@ async def _process_faq_query(
                     parse_mode=ParseMode.HTML
                 )
                 await save_chat_message(user_id, "assistant", summary)
-            
+
             # После всех 4 ответов переходим к Фазе 4
             await state.update_data(phase=4, phase4_check_contacts=False, phase4_window_shown=False)
             logger.info(f"Переход к Фазе 4 (Запись) для пользователя {user_id}")
-            
+
             # Сохранение в Excel будет происходить только при выборе "Сам" (если статус изменился) или "Контакт" (после ввода телефона)
-            
+
             # Показываем окно записи с кнопками
             await _show_phase4_booking_window(message, state, waiting_sticker_message)
             return  # Выходим, не производя поиск и LLM
-    
+
     # Проверка: если мы в Фазе 3 (Анкетирование), но anketa_started=False, не производим поиск и общение с LLM
     if current_phase == 3:
         logger.info(f"Пользователь {user_id} в Фазе 3 (Анкетирование) - поиск и LLM отключены")
         await _delete_waiting_sticker(waiting_sticker_message)
         return
-    
+
     # ЖЕСТКОЕ ОГРАНИЧЕНИЕ: Если окно Фазы 4 активно, показываем его снова
     # Пользователь ДОЛЖЕН выбрать одну из трех кнопок, иначе окно будет показываться снова
     if state_data.get("phase4_window_shown") and current_phase == 4:
@@ -1693,11 +1693,11 @@ async def _process_faq_query(
                 except Exception as msg_error:
                     logger.error(f"Не удалось отправить сообщение об ошибке: {msg_error}")
             return
-    
+
     # Обработка Фазы 4: Запись (имя и телефон) - только если окно не показано (пользователь вводит данные)
     if current_phase == 4 and not state_data.get("phase4_window_shown"):
         phase4_state = state_data.get("phase4_state", None)  # "waiting_name", "waiting_phone", None
-        
+
         if phase4_state == "waiting_name":
             # Получаем имя (без валидации)
             name = user_q.strip()
@@ -1715,15 +1715,15 @@ async def _process_faq_query(
                 )
                 await save_chat_message(user_id, "assistant", phone_message)
                 return
-        
+
         elif phase4_state == "waiting_phone":
             # Получаем список ID нерелевантных сообщений
             invalid_messages = state_data.get("phase4_invalid_messages", [])
-            
+
             # Проверяем формат телефона: 8 ХХХ ХХХ ХХХХ или +7 ХХХ ХХХ ХХХХ
             phone_pattern = r"^(\+?7|8)[\s\-\(]?(\d{3})[\s\-\)]?(\d{3})[\s\-]?(\d{2})[\s\-]?(\d{2})$"
             match = re.match(phone_pattern, user_q.strip())
-            
+
             if match:
                 # Телефон валиден - нормализуем формат
                 phone = re.sub(r"[\s\-\(\)]", "", user_q.strip())
@@ -1731,13 +1731,13 @@ async def _process_faq_query(
                     phone = "+7" + phone[1:]
                 elif not phone.startswith("+7"):
                     phone = "+7" + phone
-                
+
                 await update_user_profile(user_id, phone=phone)
                 logger.info(f"Получен телефон: {phone}")
-                
+
                 # Отправляем стикер ожидания после получения телефона
                 phone_waiting_sticker = await _send_waiting_sticker(message)
-                
+
                 # Удаляем все нерелевантные сообщения (включая ответы бота) перед завершением
                 if invalid_messages and message and message.chat:
                     for msg_id in invalid_messages:
@@ -1746,7 +1746,7 @@ async def _process_faq_query(
                             logger.info(f"Удалено нерелевантное сообщение {msg_id} для пользователя {user_id}")
                         except Exception as e:
                             logger.warning(f"Не удалось удалить сообщение {msg_id}: {e}")
-                
+
                 # Сохраняем в Excel после записи Name и Phone
                 profile = await get_user_profile(user_id)
                 if profile and (profile.status or "").strip() in ("Обучение", "Консультация"):
@@ -1757,7 +1757,7 @@ async def _process_faq_query(
                         logger.info(f"✅ Данные лида сохранены в Excel: статус='{profile.status}'")
                     except Exception as e:
                         logger.error(f"❌ Ошибка при сохранении в Excel: {e}", exc_info=True)
-                
+
                 # Завершаем запись
                 await state.update_data(
                     phase=1,
@@ -1784,7 +1784,7 @@ async def _process_faq_query(
                 if message and message.message_id:
                     invalid_messages.append(message.message_id)
                     await state.update_data(phase4_invalid_messages=invalid_messages)
-                
+
                 # Отправляем сообщение об ошибке
                 retry_message = "💤 Неправильный формат телефона!\n<b>Ваш Номер телефона?</b>\n(в формате +7(8)...)"
                 sent_message = await _answer_with_sticker_cleanup(
@@ -1797,10 +1797,10 @@ async def _process_faq_query(
                 if sent_message and sent_message.message_id:
                     invalid_messages.append(sent_message.message_id)
                     await state.update_data(phase4_invalid_messages=invalid_messages)
-                
+
                 await save_chat_message(user_id, "assistant", retry_message)
                 return
-        
+
         # Если не в состоянии ожидания имени/телефона, блокируем поиск и LLM
         logger.info(f"Пользователь {user_id} в Фазе 4 (Запись) - поиск и LLM отключены")
         await _delete_waiting_sticker(waiting_sticker_message)
@@ -1839,16 +1839,16 @@ async def _process_faq_query(
         # Проверяем ключевые слова для перехода к Фазе 2 (ДО поиска и LLM)
         user_q_lower = user_q.lower()
         intent_keywords = [
-            "консультац", "запис", "позвон", "перезвон", 
+            "консультац", "запис", "позвон", "перезвон",
             "связаться", "хочу", "желаю", "начать", "тренинг", "решил", "решен"
         ]
         has_intent_keywords = any(kw in user_q_lower for kw in intent_keywords)
-        
+
         # Проверяем, была ли нажата кнопка "Записаться"
         is_booking_button = user_q.strip() == "📝 Записаться" or user_q.strip() == "Записаться"
-        
+
         logger.info(f"Проверка намерений: user_q='{user_q}', has_intent_keywords={has_intent_keywords}, is_booking_button={is_booking_button}, current_phase={current_phase}, intent_selection_shown={state_data.get('intent_selection_shown')}")
-        
+
         # Если обнаружены ключевые слова или кнопка "Записаться" в Фазе 1 - показываем окно выбора БЕЗ поиска и LLM
         if (has_intent_keywords or is_booking_button) and current_phase == 1 and not state_data.get("intent_selection_shown"):
             logger.info(f"Обнаружены ключевые слова для перехода к Фазе 2 - показываем окно выбора без поиска и LLM")
@@ -1896,13 +1896,13 @@ async def _process_faq_query(
     try:
         hits = search_store.search(user_q, top_k=5)
         logger.info(f"Поиск по запросу '{user_q}': найдено {len(hits)} результатов")
-        
+
         # Анализируем источники найденных результатов для проверки классификации
         if hits:
             school_sources = sum(1 for h in hits if h.source and h.source.startswith("1."))
             rules_sources = sum(1 for h in hits if h.source and h.source.startswith("2."))
             logger.info(f"Распределение источников до фильтрации: Тема 1 (школа)={school_sources}, Тема 2 (правила)={rules_sources}, всего={len(hits)}")
-        
+
         # Фильтрация результатов на основе классификации темы
         if hits and detected_topic != "unknown" and topic_confidence >= 0.4:
             filtered_hits = []
@@ -1911,7 +1911,7 @@ async def _process_faq_query(
                     # Если источник не указан, оставляем результат
                     filtered_hits.append(h)
                     continue
-                
+
                 source = h.source
                 # Если тема определена как "school" - приоритизируем файлы 1.x_
                 if detected_topic == "school":
@@ -1921,7 +1921,7 @@ async def _process_faq_query(
                     elif topic_confidence < 0.7:
                         # При средней уверенности оставляем, но с пониженным приоритетом
                         filtered_hits.append(h)
-                
+
                 # Если тема определена как "rules" - приоритизируем файлы 2.x_
                 elif detected_topic == "rules":
                     if source.startswith("2."):
@@ -1930,31 +1930,31 @@ async def _process_faq_query(
                     elif topic_confidence < 0.7:
                         # При средней уверенности оставляем, но с пониженным приоритетом
                         filtered_hits.append(h)
-            
+
             # Если после фильтрации остались результаты - используем их
             if filtered_hits:
                 # Приоритизируем: сначала результаты из нужной темы, потом остальные
                 prioritized_hits = []
                 other_hits = []
-                
+
                 for h in filtered_hits:
                     if not h.source:
                         other_hits.append(h)
                         continue
-                    
+
                     if detected_topic == "school" and h.source.startswith("1."):
                         prioritized_hits.append(h)
                     elif detected_topic == "rules" and h.source.startswith("2."):
                         prioritized_hits.append(h)
                     else:
                         other_hits.append(h)
-                
+
                 # Объединяем: сначала приоритетные, потом остальные
                 hits = prioritized_hits + other_hits
-                
+
                 # Ограничиваем количество результатов
                 hits = hits[:5]
-                
+
                 logger.info(f"После фильтрации по теме '{detected_topic}': осталось {len(hits)} результатов")
                 if hits:
                     school_after = sum(1 for h in hits if h.source and h.source.startswith("1."))
@@ -1963,7 +1963,7 @@ async def _process_faq_query(
             else:
                 # Если все результаты отфильтровались, используем исходные (на случай ошибки классификации)
                 logger.warning(f"Все результаты отфильтровались для темы '{detected_topic}', используем исходные результаты")
-        
+
     except Exception as search_error:
         logger.error(f"Ошибка при поиске: {search_error}", exc_info=True)
         await _answer_with_sticker_cleanup(message, "⚠️ Однако, произошел системный сбой. Повторите Ваш запрос/ответ.", waiting_sticker_message)
@@ -2004,7 +2004,7 @@ async def _process_faq_query(
                 if h.source and "1.2_Виды обучения" in h.source:
                     return 2.0  # Большой бонус для документа 1.2
                 return 0.0
-            
+
             hits = sorted(hits, key=lambda h: (h.score + _initial_course_priority(h)), reverse=True)
             logger.info(f"Приоритизирован документ 1.2_Виды обучения для запроса 'начальный курс'")
     except Exception:
@@ -2020,7 +2020,7 @@ async def _process_faq_query(
         # Проверяем только первые 3 результата, которые реально отправляются в LLM
         hits_for_llm = hits[:3]
         school_sources_in_hits = [h.source for h in hits_for_llm if h.source and any(h.source.startswith(prefix) for prefix in school_source_prefixes)]
-        
+
         # Если в топ-3 есть документы из раздела "О школе", всегда блокируем поиск первоисточников
         if school_sources_in_hits:
             has_school_sources_in_llm = True
@@ -2139,17 +2139,17 @@ async def _process_faq_query(
     except Exception as state_get_error:
         logger.warning(f"Не удалось получить данные state: {state_get_error}")
         data = {}
-    
+
     # ========== ОБРАБОТКА ФАЗ ОБЩЕНИЯ ==========
-    
+
     # Проверяем ответ LLM на наличие фразы о начале анкетирования (Фаза 3)
     answer_lower = answer.lower() if answer else ""
     has_anketa_phrase = "проведём небольшое анкетирование" in answer_lower or "анкетирование" in answer_lower
     has_ready_phrase = "я снова готов к вашим вопросам" in answer_lower or "я готов к вашим вопросам" in answer_lower
-    
+
     # has_school_sources_in_llm уже установлен выше на основе наличия документов из раздела "О школе" в топ-3
     # Если в топ-3 есть документы из раздела "О школе" (1.1, 1.2, 1.3, 1.4), поиск первоисточников всегда блокируется
-    
+
     # Если LLM начал анкетирование, переходим к Фазе 3
     # НО не переходим, если пользователь только что нажал "Продолжить"
     continue_button_pressed = data.get("continue_button_pressed", False)
@@ -2159,16 +2159,16 @@ async def _process_faq_query(
     elif continue_button_pressed:
         # Сбрасываем флаг после обработки запроса
         await state.update_data(continue_button_pressed=False)
-    
+
     # Если LLM сказал "готов к вопросам", возвращаемся к Фазе 1
     if has_ready_phrase:
         await state.update_data(phase=1)
         logger.info(f"Возврат к Фазе 1 для пользователя {user_id}")
-    
+
     # ========== КОНЕЦ ОБРАБОТКИ ФАЗ ==========
 
     user_lower = user_q.lower()
-    
+
     # СНАЧАЛА определяем, является ли запрос исключенным
     # Исключаем слишком короткие или общие запросы из поиска по правилам
     # (например, "ты кто", "кто ты", "помощь" и т.д.)
@@ -2181,14 +2181,14 @@ async def _process_faq_query(
     # Проверяем исключенные запросы более строго
     # Для коротких запросов проверяем точное совпадение
     is_excluded_query = any(pattern in user_lower for pattern in excluded_general_queries)
-    
+
     # КРИТИЧЕСКАЯ ПРОВЕРКА: Если запрос содержит "ты кто" или "кто ты" - ВСЕГДА блокируем
     # независимо от других условий (это может быть часть более длинного запроса, но все равно блокируем)
     critical_excluded = ["ты кто", "кто ты"]
     if any(pattern in user_lower for pattern in critical_excluded):
         is_excluded_query = True
         logger.info(f"КРИТИЧЕСКАЯ БЛОКИРОВКА: Запрос '{user_q}' содержит критический исключенный паттерн")
-    
+
     # Дополнительная проверка: если запрос очень короткий (<= 10 символов) и содержит только исключенные слова
     if len(user_lower.strip()) <= 10 and is_excluded_query:
         # Усиливаем проверку для очень коротких запросов
@@ -2197,9 +2197,9 @@ async def _process_faq_query(
         if all(w in excluded_words for w in words if len(w) > 1):
             is_excluded_query = True
             logger.info(f"Усиленная блокировка для короткого исключенного запроса '{user_q}'")
-    
+
     matched_corpus_from_alias = None
-    
+
     # Приоритет специфичным ключевым словам (технич, размер, требован, аксес, оборуд) над общими (правила)
     # Сначала проверяем специфичные ключевые слова для технических требований
     # НО: не устанавливаем для исключенных запросов
@@ -2209,7 +2209,7 @@ async def _process_faq_query(
             if kw in user_lower and kw in PRIMARY_SOURCE_ALIASES:
                 matched_corpus_from_alias = PRIMARY_SOURCE_ALIASES[kw]
                 break
-    
+
     # Если специфичных ключевых слов нет, проверяем остальные
     # НО: для общего алиаса "правила" требуем более строгую проверку
     # И НЕ устанавливаем matched_corpus_from_alias для исключенных запросов
@@ -2241,18 +2241,18 @@ async def _process_faq_query(
             logger.info(f"rule_query=True для запроса '{user_q}': is_rule_intent={is_rule_intent(user_q)}, matched_corpus_from_alias={matched_corpus_from_alias}")
     else:
         logger.info(f"Запрос '{user_q}' исключен из поиска по правилам (общий запрос), is_excluded_query=True")
-    
+
     # Проверяем, есть ли в hits источники из правил (2.x_), даже если классификация темы была "school"
     # Это важно для случаев, когда запрос может быть про технические требования, но классифицирован как "school"
     # НО: не переопределяем rule_query для исключенных запросов
     has_rules_sources_in_hits = any(h.source and h.source.startswith("2.") for h in hits) if hits else False
-    
+
     # Если есть источники из правил в hits, но классификация была "school", переопределяем rule_query
     # НО только если запрос не был исключен
     if has_rules_sources_in_hits and detected_topic == "school" and not is_excluded_query:
         # Проверяем, есть ли среди источников технические требования
         has_technical_in_hits = any(
-            h.source and "2.2_Технические требования" in h.source 
+            h.source and "2.2_Технические требования" in h.source
             for h in hits
         )
         if has_technical_in_hits:
@@ -2304,11 +2304,11 @@ async def _process_faq_query(
         if first_src:
             candidate_sources.append(first_src)
     main_source = candidate_sources[0] if candidate_sources else None
-    
+
     # === Блок построения первоисточников ===
     primary_sources = []
     allow_rule_button = False
-    
+
     # ЖЕСТКОЕ ОГРАНИЧЕНИЕ: Для исключенных запросов полностью блокируем поиск первоисточников
     if is_excluded_query:
         logger.info(f"ЖЕСТКАЯ БЛОКИРОВКА: Поиск первоисточников и кнопка 'Первоисточник' ЗАПРЕЩЕНЫ для исключенного запроса '{user_q}'")
@@ -2335,7 +2335,7 @@ async def _process_faq_query(
             # если есть блокировка (по стоп-словам) — ничего не делаем
             if primary_sources_blocked:
                 allowed_sources = []
-                    
+
             # если есть хоть что-то разрешённое — строим
             if allowed_sources:
                 logger.info(f"Поиск первоисточников для запроса '{user_q}' с allowed_sources={allowed_sources}")
@@ -2351,7 +2351,7 @@ async def _process_faq_query(
                     logger.info(f"Источники в найденных фрагментах: {sources_in_fragments}")
                     technical_fragments = [f for f in primary_sources if isinstance(f, dict) and '2.2_Технические требования' in f.get('source', '')]
                     logger.info(f"Фрагментов из технических требований: {len(technical_fragments)}")
-                    
+
                     # Проверяем релевантность найденных фрагментов для исключенных запросов
                     # Если запрос был исключен из общих запросов, но фрагменты найдены - проверяем их релевантность
                     if is_excluded_query:
@@ -2379,7 +2379,7 @@ async def _process_faq_query(
                             logger.info(f"Запрос '{user_q}' не содержит значимых слов - блокируем кнопку")
                             primary_sources = []
                             allow_rule_button = False
-                    
+
                     allow_rule_button = bool(primary_sources)
                     if primary_sources:
                         logger.info(f"allow_rule_button установлен в True для запроса '{user_q}', найдено {len(primary_sources)} фрагментов")
@@ -2421,7 +2421,7 @@ async def _process_faq_query(
     if not fragment_sources and main_source:
         fragment_sources = {main_source}
         logger.info(f"fragment_sources установлен из main_source: {fragment_sources}")
-    
+
     # Дополнительная проверка: если fragment_sources пуст, но в hits есть источники из правил (2.x_)
     # Это важно для технических требований (2.2), которые могут быть отфильтрованы
     if not fragment_sources and hits:
@@ -2433,7 +2433,7 @@ async def _process_faq_query(
             if not main_source:
                 main_source = list(rules_sources_in_hits)[0]
                 logger.info(f"main_source установлен из fragment_sources: {main_source}")
-    
+
     # Если fragment_sources все еще пуст, но есть primary_sources и allowed_sources - используем allowed_sources
     # Это важно для случаев, когда фрагменты не имеют поля "source"
     if not fragment_sources and primary_sources and allowed_sources:
@@ -2445,7 +2445,7 @@ async def _process_faq_query(
                     main_source = src
                 logger.info(f"fragment_sources установлен из allowed_sources: {fragment_sources} для запроса '{user_q}'")
                 break
-    
+
     # Если fragment_sources все еще пуст, но есть primary_sources - пытаемся получить источники из hits
     # Это важно для случаев, когда фрагменты не имеют поля "source"
     if not fragment_sources and primary_sources and rule_query:
@@ -2457,7 +2457,7 @@ async def _process_faq_query(
                     main_source = h.source
                 logger.info(f"Добавлен источник {h.source} из hits для запроса '{user_q}'")
                 break
-    
+
     # Если фрагменты не найдены, но есть hits из документов правил - добавляем их источники
     # Это важно для запросов типа "оборуд" и "аксес"
     if not fragment_sources and rule_query:
@@ -2474,7 +2474,7 @@ async def _process_faq_query(
             rule_query = True
 
     logger.info(f"Проверка перед блокировкой: allow_rule_button={allow_rule_button}, rule_query={rule_query}, fragment_sources={fragment_sources}, allowed_sources={allowed_sources}")
-    
+
     # Если в LLM были отправлены документы из раздела "О школе", полностью блокируем кнопку
     # НО только если запрос НЕ относится к правилам (rule_query=False)
     # Если запрос относится к правилам (rule_query=True), кнопка должна показываться независимо от наличия документов "О школе"
@@ -2482,7 +2482,7 @@ async def _process_faq_query(
         allow_rule_button = False
         primary_sources = []
         logger.info(f"Кнопка 'Первоисточник' заблокирована: обнаружены документы из раздела 'О школе' в контексте для LLM (rule_query=False)")
-    
+
     if allow_rule_button:
         # Если fragment_sources пуст, но есть allowed_sources - используем их
         if not fragment_sources and allowed_sources:
@@ -2491,7 +2491,7 @@ async def _process_faq_query(
                     fragment_sources = {src}
                     logger.info(f"fragment_sources установлен из allowed_sources в проверке: {fragment_sources}")
                     break
-        
+
         # Если fragment_sources пуст или не содержит источников из правил, проверяем hits
         if not fragment_sources or not any(src in RULE_PRIMARY_ALLOWED_SOURCES for src in fragment_sources):
             # Проверяем, есть ли источники из правил в hits
@@ -2514,13 +2514,13 @@ async def _process_faq_query(
                 allow_rule_button = False
                 primary_sources = []
                 allowed_sources = []
-        
+
         # Финальная проверка: если rule_query=True и есть fragment_sources из правил, разрешаем кнопку
         if rule_query and fragment_sources and any(src in RULE_PRIMARY_ALLOWED_SOURCES for src in fragment_sources):
             if not allow_rule_button:
                 allow_rule_button = True
                 logger.info(f"allow_rule_button установлен в True для rule_query=True с fragment_sources={fragment_sources}")
-        
+
         if allow_rule_button and not any(src in RULE_PRIMARY_ALLOWED_SOURCES for src in fragment_sources):
             logger.warning(f"Кнопка заблокирована: fragment_sources {fragment_sources} не содержит источников из RULE_PRIMARY_ALLOWED_SOURCES")
             allow_rule_button = False
@@ -2548,7 +2548,7 @@ async def _process_faq_query(
                     allow_rule_button = True
                     logger.info(f"Найдено фрагментов при повторном поиске: {len(primary_sources)}")
                 else:
-                    # Если фрагменты все еще не найдены, но есть hits из документов правил - 
+                    # Если фрагменты все еще не найдены, но есть hits из документов правил -
                     # создаем минимальный фрагмент на основе первого hit
                     for h in hits[:5]:
                         if h.source and h.source in RULE_PRIMARY_ALLOWED_SOURCES:
@@ -2560,7 +2560,7 @@ async def _process_faq_query(
                                 hit_text = h.text[:500]
                             elif hasattr(h, 'content') and h.content:
                                 hit_text = h.content[:500]
-                            
+
                             primary_sources = [{
                                 "source": h.source,
                                 "text": hit_text,
@@ -2582,7 +2582,7 @@ async def _process_faq_query(
         TECHNICAL_REQUIREMENTS_SOURCE = "2.2_Технические требования к бильярдным столам и оборудованию ФБСР_structured.txt"
         has_technical_requirements = TECHNICAL_REQUIREMENTS_SOURCE in fragment_sources
         is_equipment_query = "оборуд" in user_lower or "аксес" in user_lower
-        
+
         # Базовые термины бильярда, которые не требуют указания конкретной игры
         # Эти термины являются общими для всех игр и не требуют уточнения
         BASIC_BILLIARD_TERMS = (
@@ -2591,7 +2591,7 @@ async def _process_faq_query(
             "луза", "лузы", "борт", "борта", "разметк", "разметка"
         )
         is_basic_term_query = any(term in user_lower for term in BASIC_BILLIARD_TERMS)
-        
+
         if not has_technical_requirements and not is_equipment_query and not is_basic_term_query:
             # Проверка на игру применяется только если нет технических требований И запрос не про оборудование/аксессуары И не только базовые термины
             RULE_DISCIPLINE_HINTS = (
@@ -2641,7 +2641,7 @@ async def _process_faq_query(
         figures_in_question = image_mapper.find_figures_in_text(user_q) if user_q else []
         for fig in figures_in_question:
             forced_figures.add(fig)
-        
+
         # Фильтруем Рис.1.2.1 из figures_in_answer - он должен добавляться только если в ответе есть "начальный курс"
         # НО НЕ добавляем его, если он найден только через find_figures_in_text (т.е. только упоминание "Рис.1.2.1" в тексте)
         # Рис.1.2.1 должен добавляться только через явную проверку наличия фразы "начальный курс" в ответе
@@ -2653,7 +2653,7 @@ async def _process_faq_query(
                 pass
             else:
                 filtered_figures_in_answer.append(fig)
-        
+
         figures_found.extend(filtered_figures_in_answer)
         figures_found.extend(figures_in_question)
     except Exception as e:
@@ -2679,9 +2679,9 @@ async def _process_faq_query(
     stop_keywords = {"сертификат", "сертификата", "сертификаты"}
     all_keywords = {w for w in all_keywords if w not in stop_keywords}
 
-    # Рис.1.2.1 для "начальный курс" проверяется только в ответе LLM, не в запросе пользователя
     # Остальные фразы проверяются в запросе пользователя
     course_figures_user_query = {
+        "начальный курс": "Рис.1.2.1",
         "к1": "Рис.1.2.1",
         "сертификат 1": "Рис.1.2.1",
         "сертификат к1": "Рис.1.2.1",
@@ -2725,7 +2725,7 @@ async def _process_faq_query(
     }
     course_figure_selected = False
     course_selected_figures: set[str] = set()
-    # ПРИОРИТЕТНАЯ ПРОВЕРКА: Если в ответе LLM есть "начальный курс" (НЕ "начальный удар"), 
+    # ПРИОРИТЕТНАЯ ПРОВЕРКА: Если в ответе LLM есть "начальный курс" (НЕ "начальный удар"),
     # то НЕ добавляем рисунки по запросу пользователя, а сразу устанавливаем флаг для Рис.1.2.1
     has_initial_course_in_answer = False
     if answer and isinstance(answer, str):
@@ -2735,10 +2735,10 @@ async def _process_faq_query(
         # Проверяем, что это НЕ про правила (нет "начальный удар")
         has_initial_strike = "начальный удар" in answer_lower
         has_initial_course_in_answer = has_initial_course_phrase and not has_initial_strike and has_school_sources_in_llm
-        
+
         if has_initial_course_in_answer:
             logger.info(f"✅ ОБНАРУЖЕН 'начальный курс' в ответе LLM - блокируем добавление других рисунков по запросу пользователя")
-    
+
     # Добавляем рисунки по запросу пользователя ТОЛЬКО если нет "начальный курс" в ответе LLM
     if not has_initial_course_in_answer:
         for phrase, fig_key in course_figures_user_query.items():
@@ -2746,7 +2746,7 @@ async def _process_faq_query(
                 figures_found.append(fig_key)
                 course_figure_selected = True
                 course_selected_figures.add(fig_key)
-    
+
     # ЖЕСТКОЕ ОГРАНИЧЕНИЕ: Рис.1.2.1 показывается ТОЛЬКО когда:
     # 1. В ответе LLM есть ТОЧНАЯ фраза "начальный курс" (НЕ "начальный удар")
     # 2. И это относится к разделу "О школе" (has_school_sources_in_llm = True)
@@ -2758,13 +2758,13 @@ async def _process_faq_query(
         has_initial_course_phrase = "начальный курс" in answer_lower
         # Проверяем, что это НЕ "начальный удар" из правил
         has_initial_strike = "начальный удар" in answer_lower
-        
+
         # Рис.1.2.1 показывается ТОЛЬКО если есть "начальный курс" И НЕТ "начальный удар"
         if has_initial_course_phrase and not has_initial_strike:
             # Дополнительная проверка: не добавляем, если в ответе есть другие признаки правил
             rules_indicators_in_answer = ["биток", "прицел", "шар", "луза", "пирамида", "правила игры", "штраф", "соударение"]
             has_rules_in_answer = any(indicator in answer_lower for indicator in rules_indicators_in_answer)
-            
+
             if not has_rules_in_answer:
                 # Добавляем Рис.1.2.1, если его еще нет
                 if "Рис.1.2.1" not in figures_found:
@@ -2831,12 +2831,12 @@ async def _process_faq_query(
         answer_lower = answer.lower()
         has_initial_course_phrase = "начальный курс" in answer_lower
         has_initial_strike = "начальный удар" in answer_lower
-        
+
         if has_initial_course_phrase and not has_initial_strike and has_school_sources_in_llm:
             # Если есть "начальный курс", оставляем ТОЛЬКО Рис.1.2.1
             rules_indicators = ["биток", "прицел", "шар", "луза", "пирамида", "правила игры", "штраф", "соударение"]
             has_rules = any(indicator in answer_lower for indicator in rules_indicators)
-            
+
             if not has_rules:
                 # Оставляем ТОЛЬКО Рис.1.2.1, удаляем все остальные
                 figures_found = ["Рис.1.2.1"] if "Рис.1.2.1" in figures_found else []
@@ -2939,12 +2939,12 @@ async def _process_faq_query(
         answer_lower = answer.lower()
         # Проверяем ТОЧНУЮ фразу "начальный курс" (регистронезависимо)
         has_initial_course_phrase = "начальный курс" in answer_lower
-        
+
         if has_initial_course_phrase and has_school_sources_in_llm:
             # Проверяем, что нет признаков правил
             rules_indicators = ["начальный удар", "биток", "прицел", "шар", "луза", "пирамида", "правила игры", "штраф", "соударение"]
             has_rules = any(indicator in answer_lower for indicator in rules_indicators)
-            
+
             if not has_rules:
                 # КРИТИЧНО: Оставляем ТОЛЬКО Рис.1.2.1, удаляем ВСЕ остальные рисунки
                 # Это должно происходить ПОСЛЕ всех операций с рисунками
@@ -2954,7 +2954,7 @@ async def _process_faq_query(
 
     if not answer or not isinstance(answer, str):
         answer = "⚠️ Затрудняюсь ответить. Переформулируйте Ваш запрос."
-    
+
     try:
         final_answer = answer.strip() if answer and isinstance(answer, str) else ""
         if not final_answer:
@@ -2972,7 +2972,7 @@ async def _process_faq_query(
             _remove_lonely_emojis,
             _normalize_cta_block,
         ]
-        
+
         for func in processing_functions:
             try:
                 final_answer = func(final_answer) if final_answer else ""
@@ -2981,7 +2981,7 @@ async def _process_faq_query(
             except Exception as func_error:
                 logger.warning(f"Ошибка в функции {func.__name__}: {func_error}")
                 continue
-                
+
         if not final_answer:
             final_answer = "⚠️ Затрудняюсь ответить. Переформулируйте Ваш запрос."
     except Exception as text_error:
@@ -3034,12 +3034,12 @@ async def _process_faq_query(
         allow_rule_button = False
         primary_sources = []
         logger.info(f"Финальная блокировка: обнаружены документы из раздела 'О школе' в контексте для LLM (rule_query=False)")
-    
+
     # ЖЕСТКОЕ ОГРАНИЧЕНИЕ: stored_primary_sources сохраняется ТОЛЬКО если allow_rule_button = True
     # Это гарантирует, что кнопка не показывается, если первоисточники не разрешены
     stored_primary_sources = primary_sources if (allow_rule_button and primary_sources) else []
     logger.info(f"Финальная проверка перед показом кнопки: allow_rule_button={allow_rule_button}, primary_sources count={len(primary_sources)}, stored_primary_sources count={len(stored_primary_sources)}")
-    
+
     # Убеждаемся, что фрагменты сериализуемы (преобразуем в словари, если нужно)
     # И ТОЛЬКО если allow_rule_button = True
     if stored_primary_sources and allow_rule_button:
@@ -3055,7 +3055,7 @@ async def _process_faq_query(
                     logger.warning(f"Не удалось сериализовать фрагмент: {frag}")
         stored_primary_sources = serializable_sources
         logger.info(f"Фрагменты подготовлены для сериализации: count={len(stored_primary_sources)}")
-    
+
     try:
         # Сохраняем в state если allow_rule_button = True
         # Для rule_query=True и наличия источников в fragment_sources разрешаем кнопку даже если фрагменты не найдены
@@ -3075,7 +3075,7 @@ async def _process_faq_query(
                         "figures": getattr(h, 'figures', ""),
                         "section": getattr(h, 'section', "")
                     })
-            
+
             if stored_primary_sources:
                 await state.update_data(
                     primary_sources=stored_primary_sources,
@@ -3125,7 +3125,7 @@ async def _process_faq_query(
         llm_response_blocked = any(stop_word in final_answer_lower for stop_word in STOP_WORDS_IN_LLM_RESPONSE)
         if llm_response_blocked:
             logger.info(f"Кнопка 'Первоисточник' заблокирована из-за стоп-слов в ответе LLM")
-        
+
         # КРИТИЧЕСКАЯ ПРОВЕРКА: жесткая блокировка для критических стоп-слов
         # Эти слова блокируют кнопку даже для правил (rule_query=True)
         critical_llm_response_blocked = any(critical_word in final_answer_lower for critical_word in CRITICAL_STOP_WORDS_IN_LLM_RESPONSE)
@@ -3139,7 +3139,7 @@ async def _process_faq_query(
     user_q_lower_check = user_q.lower() if user_q else ""
     critical_excluded_check = ["ты кто", "кто ты"]
     is_critically_excluded = any(pattern in user_q_lower_check for pattern in critical_excluded_check)
-    
+
     # Кнопка показывается если:
     # 0. Запрос НЕ исключен (критическая проверка)
     # 0.5. НЕТ критических стоп-слов в ответе LLM (жесткая блокировка, даже для правил)
@@ -3148,22 +3148,22 @@ async def _process_faq_query(
     # 3. И (stored_primary_sources не пуст ИЛИ rule_query=True с fragment_sources из правил)
     # Для правил (rule_query=True) игнорируем обычную блокировку из-за стоп-слов, НО критическая блокировка применяется всегда
     should_show_button = (
-        not is_critically_excluded and 
-        not critical_llm_response_blocked and 
+        not is_critically_excluded and
+        not critical_llm_response_blocked and
         allow_rule_button and (
             (not llm_response_blocked or rule_query) and (
-                stored_primary_sources or 
+                stored_primary_sources or
                 (rule_query and fragment_sources and any(src in RULE_PRIMARY_ALLOWED_SOURCES for src in fragment_sources))
             )
         )
     )
-    
+
     if is_critically_excluded:
         logger.info(f"КРИТИЧЕСКАЯ БЛОКИРОВКА КНОПКИ: Запрос '{user_q}' содержит критический исключенный паттерн - кнопка НЕ будет показана")
-    
+
     if critical_llm_response_blocked:
         logger.info(f"КРИТИЧЕСКАЯ БЛОКИРОВКА КНОПКИ: Ответ LLM содержит критические стоп-слова ('затрудн' или 'извин') - кнопка НЕ будет показана, даже для правил")
-    
+
     if should_show_button:
         reply_markup = InlineKeyboardMarkup(
             inline_keyboard=[[InlineKeyboardButton(text="📄 Первоисточник", callback_data="primary_source:open")]]
@@ -3176,14 +3176,14 @@ async def _process_faq_query(
         await save_chat_message(user_id, "assistant", final_answer)
     except Exception as save_error:
         logger.warning(f"Не удалось сохранить сообщение в историю: {save_error}")
-    
+
     # Проверка Фазы 4: если имя и телефон не получены, выводим сообщение
     if current_phase == 4 and data.get("phase4_check_contacts"):
         profile_check = await get_user_profile(user_id)
         if profile_check:
             has_name = bool(profile_check.name and profile_check.name.strip())
             has_phone = bool(profile_check.phone and profile_check.phone.strip())
-            
+
             if not has_name or not has_phone:
                 await _answer_with_sticker_cleanup(message, "😕 Жаль! Я готов продолжать отвечать на Ваши вопросы.", waiting_sticker_message)
                 await save_chat_message(user_id, "assistant", "😕 Жаль! Я готов продолжать отвечать на Ваши вопросы.")
@@ -3193,10 +3193,10 @@ async def _process_faq_query(
     try:
         if not final_answer or not isinstance(final_answer, str):
             final_answer = "⚠️ Затрудняюсь ответить. Переформулируйте Ваш запрос."
-        
+
         # Telegram имеет лимит 4096 символов на сообщение
         MAX_MESSAGE_LENGTH = 4096
-        
+
         if len(final_answer) <= MAX_MESSAGE_LENGTH:
             # Сообщение короткое, отправляем как есть
             await _answer_with_sticker_cleanup(message, final_answer, waiting_sticker_message, reply_markup=reply_markup)
@@ -3207,7 +3207,7 @@ async def _process_faq_query(
             sentences = re.split(r'(?<=[.!?])\s+', final_answer)
             parts = []
             current_part = ""
-            
+
             for sentence in sentences:
                 # Если само предложение длиннее лимита, разбиваем его по словам
                 if len(sentence) > MAX_MESSAGE_LENGTH:
@@ -3215,7 +3215,7 @@ async def _process_faq_query(
                     if current_part:
                         parts.append(current_part.strip())
                         current_part = ""
-                    
+
                     # Разбиваем длинное предложение по словам
                     words = sentence.split()
                     for word in words:
@@ -3233,11 +3233,11 @@ async def _process_faq_query(
                     if current_part:
                         parts.append(current_part.strip())
                     current_part = sentence
-            
+
             # Добавляем последнюю часть
             if current_part:
                 parts.append(current_part.strip())
-            
+
             # Отправляем все части, клавиатуру прикрепляем только к последнему сообщению
             # Стикер удаляем после первого сообщения
             for i, part in enumerate(parts):
@@ -3247,7 +3247,7 @@ async def _process_faq_query(
                     await _answer_with_sticker_cleanup(message, part, waiting_sticker_message, reply_markup=reply_markup if is_last else None)
                 else:
                     await message.answer(part, reply_markup=reply_markup if is_last else None)
-            
+
             logger.info(f"Ответ отправлен пользователю {user_id} ({len(parts)} частей)")
     except Exception as e:
         logger.error(f"Ошибка при отправке ответа: {e}", exc_info=True)
@@ -3259,16 +3259,16 @@ async def _process_faq_query(
     if answer and isinstance(answer, str):
         answer_lower = answer.lower()
         has_initial_course_phrase = "начальный курс" in answer_lower
-        
+
         logger.info(f"🔍 ПРОВЕРКА ПЕРЕД ОТПРАВКОЙ: answer содержит 'начальный курс'? {has_initial_course_phrase}, has_school_sources_in_llm={has_school_sources_in_llm}, filtered_figures={filtered_figures}")
         logger.info(f"🔍 ПРОВЕРКА ПЕРЕД ОТПРАВКОЙ: answer (первые 200 символов): {answer[:200]}")
-        
+
         if has_initial_course_phrase and has_school_sources_in_llm:
             rules_indicators = ["начальный удар", "биток", "прицел", "шар", "луза", "пирамида", "правила игры", "штраф", "соударение"]
             has_rules = any(indicator in answer_lower for indicator in rules_indicators)
-            
+
             logger.info(f"🔍 ПРОВЕРКА ПЕРЕД ОТПРАВКОЙ: has_rules={has_rules}")
-            
+
             if not has_rules:
                 # АБСОЛЮТНО: Оставляем ТОЛЬКО Рис.1.2.1, удаляем ВСЕ остальные
                 # Это последняя проверка перед отправкой, она переопределяет все предыдущие операции
@@ -3310,7 +3310,7 @@ async def cmd_cancel(message: Message, state: FSMContext) -> None:
     logger = logging.getLogger(__name__)
     user_id = message.from_user.id if message.from_user else 0
     logger.info(f"Получена команда /cancel от пользователя {user_id}")
-    
+
     try:
         await _normalize_state(state, user_id)
         cancel_message = "▶️ Я готов к Вашим вопросам."
@@ -3354,7 +3354,7 @@ async def handle_faq(message: Message, state: FSMContext) -> None:
     # Проверяем текущую фазу - для фаз 2, 3 и 4 не отправляем стикер ожидания
     state_data = await state.get_data()
     current_phase = state_data.get("phase", 1)
-    
+
     # Отправляем стикер ожидания только для Фазы 1
     waiting_sticker_message = None
     if current_phase == 1:
@@ -3384,7 +3384,7 @@ async def handle_voice_message(message: Message, state: FSMContext) -> None:
     # Проверяем текущую фазу - для фаз 2, 3 и 4 не отправляем стикер ожидания
     state_data = await state.get_data()
     current_phase = state_data.get("phase", 1)
-    
+
     # Отправляем стикер ожидания только для Фазы 1
     waiting_sticker_message = None
     if current_phase == 1:
@@ -3400,18 +3400,18 @@ async def handle_voice_message(message: Message, state: FSMContext) -> None:
         temp_dir = os.getenv("TMPDIR", os.getenv("TEMP", tempfile.gettempdir()))
         # Создаем директорию, если её нет
         os.makedirs(temp_dir, exist_ok=True)
-        
+
         # Скачиваем голосовое сообщение в .oga формате
         with tempfile.NamedTemporaryFile(delete=False, suffix=".oga", dir=temp_dir) as tmp:
             await message.bot.download(message.voice, destination=tmp.name)
             temp_path = tmp.name
 
         logger.info(f"Голосовое сообщение скачано: {temp_path}, размер: {os.path.getsize(temp_path) if os.path.exists(temp_path) else 0} байт")
-        
+
         # Конвертируем .oga в .wav через ffmpeg (faster-whisper лучше работает с .wav)
         import subprocess
         converted_path = temp_path.replace(".oga", ".wav")
-        
+
         logger.info(f"Конвертация .oga в .wav: {converted_path}")
         try:
             # Конвертируем через ffmpeg
@@ -3422,7 +3422,7 @@ async def handle_voice_message(message: Message, state: FSMContext) -> None:
                 timeout=30
             )
             logger.info(f"Конвертация завершена успешно: {converted_path}")
-            
+
             # Используем сконвертированный файл для транскрибации
             audio_file = converted_path
         except subprocess.CalledProcessError as e:
@@ -3494,11 +3494,11 @@ async def handle_voice_message(message: Message, state: FSMContext) -> None:
     # Отправляем расшифровку голоса - это текстовое сообщение, поэтому удаляем стикер ожидания
     transcript_message = await message.answer(f"🎤 {cleaned_transcript}")
     await _delete_waiting_sticker(waiting_sticker_message)
-    
+
     # Проверяем текущую фазу - для фаз 2, 3 и 4 не отправляем стикер ожидания
     state_data_voice = await state.get_data()
     current_phase_voice = state_data_voice.get("phase", 1)
-    
+
     # Отправляем стикер ожидания только для Фазы 1
     waiting_sticker_message = None
     if current_phase_voice == 1:
@@ -3513,23 +3513,23 @@ async def handle_voice_message(message: Message, state: FSMContext) -> None:
 async def handle_intent_selection(callback: CallbackQuery, state: FSMContext) -> None:
     """Обработка выбора намерения из окна выбора"""
     logger = logging.getLogger(__name__)
-    
+
     # Проверяем наличие пользователя и сообщения
     if not callback.from_user:
         logger.error("callback.from_user is None")
         await callback.answer("Ошибка: пользователь не найден", show_alert=True)
         return
-    
+
     if not callback.message:
         logger.error("callback.message is None")
         await callback.answer("Ошибка: сообщение не найдено", show_alert=True)
         return
-    
+
     user_id = callback.from_user.id
     intent_type = callback.data.split(":")[1] if ":" in callback.data else ""
-    
+
     # Оставляем сообщение с окном выбора в чате (не удаляем)
-    
+
     try:
         if intent_type == "training":
             # Пользователь выбрал "Обучение"
@@ -3550,13 +3550,13 @@ async def handle_intent_selection(callback: CallbackQuery, state: FSMContext) ->
                 await update_user_profile(tg_user_id=user_id, status=status)
             await callback.answer("Выбрано: Обучение")
             logger.info(f"Пользователь {user_id} выбрал Обучение")
-            
+
             # Сбрасываем флаг окна выбора намерения, так как выбор сделан
             await state.update_data(intent_selection_shown=False)
-            
+
             # Показываем окно политики (waiting_sticker_message не нужен, так как это callback)
             await show_policy_window(callback.message, state, user_intent, None)
-            
+
         elif intent_type == "consultation":
             # Пользователь выбрал "Консультация"
             user_intent = "Консультация"
@@ -3576,18 +3576,18 @@ async def handle_intent_selection(callback: CallbackQuery, state: FSMContext) ->
                 await update_user_profile(tg_user_id=user_id, status=status)
             await callback.answer("Выбрано: Консультация")
             logger.info(f"Пользователь {user_id} выбрал Консультация")
-            
+
             # Сбрасываем флаг окна выбора намерения, так как выбор сделан
             await state.update_data(intent_selection_shown=False)
-            
+
             # Показываем окно политики (waiting_sticker_message не нужен, так как это callback)
             await show_policy_window(callback.message, state, user_intent, None)
-            
+
         elif intent_type == "continue":
             # Пользователь выбрал "Продолжить" - возвращаемся к Фазе 1
             await callback.answer("Продолжаем общение")
             logger.info(f"Пользователь {user_id} выбрал Продолжить - возврат к Фазе 1")
-            
+
             # Явно устанавливаем фазу в 1 и сбрасываем все флаги
             await state.update_data(
                 phase=1,
@@ -3597,7 +3597,7 @@ async def handle_intent_selection(callback: CallbackQuery, state: FSMContext) ->
                 anketa_question=None,
                 continue_button_pressed=False,
             )
-            
+
             # Отправляем сообщение о готовности к вопросам
             if callback.message:
                 try:
@@ -3609,7 +3609,7 @@ async def handle_intent_selection(callback: CallbackQuery, state: FSMContext) ->
         else:
             logger.warning(f"Неизвестный тип намерения: {intent_type}")
             await callback.answer("Ошибка: неизвестный выбор", show_alert=True)
-            
+
     except Exception as e:
         logger.error(f"Ошибка при обработке выбора намерения: {e}", exc_info=True)
         await callback.answer("⚠️ Произошла ошибка. Попробуйте еще раз.", show_alert=True)
@@ -3622,13 +3622,13 @@ async def handle_primary_source_open(callback: CallbackQuery, state: FSMContext)
     fragments = data.get("primary_sources") or []
     primary_source_is_rules = data.get("primary_source_is_rules", False)
     logger.info(f"Открытие первоисточника: fragments count={len(fragments)}, primary_source_is_rules={primary_source_is_rules}, data keys={list(data.keys())}")
-    
+
     # Проверяем, что первоисточники разрешены
     if not primary_source_is_rules:
         logger.warning(f"Первоисточники не разрешены для этого запроса (primary_source_is_rules=False)")
         await callback.answer("Первоисточник недоступен для этого запроса.", show_alert=True)
         return
-    
+
     # Если фрагменты не найдены, но primary_source_is_rules=True, пытаемся найти их заново
     if not fragments:
         main_source = data.get("primary_source_main_source")
@@ -3661,13 +3661,13 @@ async def handle_primary_source_open(callback: CallbackQuery, state: FSMContext)
                                         figures=hit_data.get("figures", ""),
                                         section=hit_data.get("section", "")
                                     ))
-                        
+
                         if not search_hits:
                             # Если hits не сохранены, делаем новый поиск
                             from ..knowledge import search_store as kb_search
                             search_results = kb_search.search(user_query, limit=5)
                             search_hits = search_results if search_results else []
-                        
+
                         fragments = search_store.get_primary_source_fragments(
                             search_hits,
                             user_query,
@@ -3708,14 +3708,14 @@ async def handle_primary_source_open(callback: CallbackQuery, state: FSMContext)
     fragment_source = fragment.get("source") if isinstance(fragment, dict) else None
     resolved_source = fragment_source or main_source
     download_info = _get_download_info_for_source(resolved_source) if resolved_source else None
-    
+
     try:
         text = _format_primary_source_fragment(fragment, 0, len(fragments), download_info)
     except Exception as format_error:
         logger.error(f"Ошибка при форматировании фрагмента: {format_error}", exc_info=True)
         await callback.answer("Ошибка при форматировании фрагмента.", show_alert=True)
         return
-    
+
     markup = _build_primary_source_markup(0, len(fragments), download_info)
 
     await state.update_data(primary_source_index=0, primary_source_figure_messages=[])
@@ -3726,7 +3726,7 @@ async def handle_primary_source_open(callback: CallbackQuery, state: FSMContext)
         logger.error(f"Ошибка при отправке сообщения с первоисточником: {send_error}", exc_info=True)
         await callback.answer("Ошибка при отправке сообщения.", show_alert=True)
         return
-    
+
     # Отправляем рисунки, если они есть для этого фрагмента
     figure_message_ids = []
     try:
@@ -3755,22 +3755,22 @@ async def handle_primary_source_open(callback: CallbackQuery, state: FSMContext)
 async def handle_phase4_button(callback: CallbackQuery, state: FSMContext) -> None:
     """Обработка кнопок Фазы 4 (Запись)"""
     logger = logging.getLogger(__name__)
-    
+
     if not callback.from_user:
         logger.error("callback.from_user is None")
         await callback.answer("Ошибка: пользователь не найден", show_alert=True)
         return
-    
+
     if not callback.message:
         logger.error("callback.message is None")
         await callback.answer("Ошибка: сообщение не найдено", show_alert=True)
         return
-    
+
     user_id = callback.from_user.id
     button_type = callback.data.split(":")[1] if ":" in callback.data else ""
-    
+
     # Оставляем сообщение с окном в чате (не удаляем)
-    
+
     try:
         if button_type == "self":
             # Кнопка "📞 САМ"
@@ -3779,14 +3779,14 @@ async def handle_phase4_button(callback: CallbackQuery, state: FSMContext) -> No
             old_status = state_data.get("old_status_before_intent", "")
             profile = await get_user_profile(user_id)
             current_status = (profile.status or "").strip() if profile else ""
-            
+
             # Статус изменился, если он отличается от старого или если старый был пустым/Читатель
             is_lead_status = current_status in ("Обучение", "Консультация")
             status_changed = (
                 current_status != old_status or
                 (old_status in ("", "Читатель") and is_lead_status)
             )
-            
+
             # Если статус изменился - сохраняем в Excel
             if status_changed and is_lead_status:
                 try:
@@ -3796,14 +3796,14 @@ async def handle_phase4_button(callback: CallbackQuery, state: FSMContext) -> No
                     logger.info(f"✅ Данные лида сохранены в Excel: статус='{current_status}'")
                 except Exception as e:
                     logger.error(f"❌ Ошибка при сохранении в Excel: {e}", exc_info=True)
-            
+
             await state.update_data(phase=1, phase4_window_shown=False, phase4_state=None)
             message_text = "👌<b>Прекрасно, ждём Вашего звонка!</b>\n... а я - весь внимание, готов к Вашим вопросам! ▶️"
             await callback.message.answer(message_text, parse_mode=ParseMode.HTML)
             await save_chat_message(user_id, "assistant", message_text)
             await callback.answer()
             logger.info(f"Пользователь {user_id} выбрал самостоятельную запись, status_changed={status_changed}")
-        
+
         elif button_type == "contacts":
             # Кнопка "👨‍🎓 КОНТАКТЫ"
             await state.update_data(phase4_state="waiting_name", phase4_window_shown=False)
@@ -3812,13 +3812,13 @@ async def handle_phase4_button(callback: CallbackQuery, state: FSMContext) -> No
             await save_chat_message(user_id, "assistant", name_message)
             await callback.answer()
             logger.info(f"Пользователь {user_id} выбрал оставить контакты")
-        
+
         elif button_type == "cancel":
             # Кнопка "❌ Отмена"
             # Получаем список нерелевантных сообщений для удаления
             state_data = await state.get_data()
             invalid_messages = state_data.get("phase4_invalid_messages", [])
-            
+
             # Удаляем нерелевантные сообщения (включая ответы бота) перед отменой
             if invalid_messages and callback.message and callback.message.chat:
                 for msg_id in invalid_messages:
@@ -3830,14 +3830,14 @@ async def handle_phase4_button(callback: CallbackQuery, state: FSMContext) -> No
                         logger.info(f"Удалено нерелевантное сообщение {msg_id} при отмене для пользователя {user_id}")
                     except Exception as e:
                         logger.warning(f"Не удалось удалить сообщение {msg_id} при отмене: {e}")
-            
+
             await _normalize_state(state, user_id)
             cancel_message = "▶️ Я готов к Вашим вопросам."
             await callback.message.answer(cancel_message, parse_mode=ParseMode.HTML)
             await save_chat_message(user_id, "assistant", cancel_message)
             await callback.answer()
             logger.info(f"Пользователь {user_id} отменил запись")
-        
+
     except Exception as e:
         logger.error(f"Ошибка при обработке кнопки Фазы 4: {e}", exc_info=True)
         await callback.answer("⚠️ Произошла ошибка. Попробуйте еще раз.", show_alert=True)
@@ -3887,7 +3887,7 @@ async def handle_primary_source_goto(callback: CallbackQuery, state: FSMContext)
 
     # Используем циклическую навигацию (по кругу)
     idx = requested_index % len(fragments) if len(fragments) > 0 else 0
-    
+
     fragment = fragments[idx]
     main_source = data.get("primary_source_main_source")
     fragment_source = fragment.get("source") if isinstance(fragment, dict) else None
@@ -3913,7 +3913,7 @@ async def handle_primary_source_goto(callback: CallbackQuery, state: FSMContext)
 
     await state.update_data(primary_source_index=idx)
     await callback.answer()
-    
+
     # Отправляем рисунки, если они есть для этого фрагмента
     figure_message_ids = []
     if sent_message:
@@ -3950,9 +3950,9 @@ async def handle_primary_source_close(callback: CallbackQuery, state: FSMContext
             await callback.bot.delete_message(chat_id=callback.message.chat.id, message_id=msg_id)
         except Exception as del_error:
             logger.debug(f"Не удалось удалить сообщение с рисунком {msg_id}: {del_error}")
-    
+
     await state.update_data(primary_source_figure_messages=[])
-    
+
     try:
         await callback.message.delete()
     except Exception:
