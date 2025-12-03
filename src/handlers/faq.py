@@ -1,4 +1,4 @@
-import logging
+﻿import logging
 import os
 import re
 import tempfile
@@ -327,6 +327,7 @@ def _truncate_primary_source_text(text: str) -> str:
 _BOLD_LINE_PATTERN = re.compile(r"^\s*\*\*(.+?)\*\*\s*$", re.MULTILINE)
 CTA_KEYWORDS = (
     "запис",
+    "запишит",
     "оставит заявку",
     "оставь заявку",
     "свяж",
@@ -343,6 +344,9 @@ CTA_KEYWORDS = (
     "телеф",
     "готов",
     "могу",
+    "обсуд",
+    "обсуж",
+    "выбир",
 )
 
 BRACKETED_COUNT_FIGURE_PATTERN = re.compile(
@@ -750,43 +754,43 @@ def _bold_to_arrow(text: str) -> str:
 
 def _split_into_sentences(text: str) -> list[str]:
     """Разделяет текст на предложения по критериям:
-    
+
     Предложение:
     - Начинается с заглавной буквы (или цифры для списков)
     - Заканчивается на ".", "?", "!" или "..."
     - После конечных символов следует пробел или конец строки
-    
+
     Args:
         text: Текст для разделения
-        
+
     Returns:
         Список предложений (без пустых)
     """
     if not text:
         return []
-    
+
     # Нормализуем текст: заменяем все пробельные символы на один пробел
     # Также нормализуем многоточие: заменяем символ многоточия (…) на три точки
     normalized_text = re.sub(r'…', '...', text.strip())
     normalized_text = re.sub(r'\s+', ' ', normalized_text)
     if not normalized_text:
         return []
-    
+
     # Разделяем по знакам препинания (включая "...") с пробелом или концом строки после них
     # Паттерн: многоточие или одиночный знак препинания, за которым следует пробел или конец строки
     # Используем lookahead для проверки пробела или конца строки
     parts = re.split(r'(\.\.\.|[.!?])(?=\s+|$)', normalized_text)
-    
+
     sentences = []
     current_sentence = ''
-    
+
     i = 0
     while i < len(parts):
         part = parts[i]
         if not part:
             i += 1
             continue
-        
+
         # Если это знак препинания (многоточие или одиночный знак)
         if part in ['.', '!', '?', '...']:
             current_sentence += part
@@ -802,35 +806,35 @@ def _split_into_sentences(text: str) -> list[str]:
                 part = part.lstrip()  # Убираем пробелы в начале, если уже есть текст
             current_sentence += part
             i += 1
-    
+
     # Добавляем последнее предложение, если оно есть (без знака препинания в конце)
     if current_sentence.strip():
         sentences.append(current_sentence.strip())
-    
+
     # Фильтруем предложения: должны начинаться с заглавной буквы или цифры
     filtered_sentences = []
     for sentence in sentences:
         stripped = sentence.strip()
         if not stripped:
             continue
-        
+
         # Убираем пробелы в начале и проверяем первую букву
         # Проверяем, начинается ли с заглавной буквы или цифры
         first_char = stripped.lstrip()[0] if stripped.lstrip() else ''
         if first_char and (first_char.isupper() or first_char.isdigit()):
             filtered_sentences.append(stripped)
-    
+
     return filtered_sentences
 
 
 def _move_cta_to_end(text: str) -> str:
     """Анализирует конец текста на наличие критериев CTA и формирует блок CTA.
-    
-    ВАЖНО: 
+
+    ВАЖНО:
     1. Ищется фрагмент в конце основного текста, который отвечает критериям CTA
     2. Формируется из него CTA блок со знаком 🎯, с новой строки, с одной пустой строкой сверху
     3. В CTA входит ЛЮБОЙ текст в конце основного сообщения, отвечающий критериям CTA
-    
+
     Критерии CTA:
     - Предложения с вопросами (знак "?") ИЛИ ключевыми словами CTA
     """
@@ -842,15 +846,15 @@ def _move_cta_to_end(text: str) -> str:
     sentences = _split_into_sentences(text)
     if not sentences:
         return text
-    
+
     # Ограничиваем поиск последними 5 предложениями
     # Ищем СВЕРХУ ВНИЗ (с начала последних 5 предложений) первое релевантное предложение
     search_limit = min(5, len(sentences))  # Последние 5 предложений
     last_5_start = len(sentences) - search_limit  # Начало последних 5 предложений
-    
+
     cta_start_index = None
     cta_start_index_by_keyword = None
-    
+
     # Идем СВЕРХУ ВНИЗ в пределах последних 5 предложений (с начала последних 5 к концу)
     # Сначала ищем предложения с вопросами (приоритет)
     for i in range(last_5_start, len(sentences)):
@@ -858,13 +862,13 @@ def _move_cta_to_end(text: str) -> str:
         stripped = sentence.strip()
         if not stripped:
             continue
-        
+
         is_question = "?" in stripped or stripped.endswith("?")
         if is_question:
             # Нашли первое предложение с вопросом - это начало CTA блока
             cta_start_index = i
             break
-    
+
     # Если не нашли предложение с вопросом, ищем предложения с ключевыми словами
     if cta_start_index is None:
         for i in range(last_5_start, len(sentences)):
@@ -872,14 +876,14 @@ def _move_cta_to_end(text: str) -> str:
             stripped = sentence.strip()
             if not stripped:
                 continue
-            
-        lower = stripped.lower()
-        has_cta_keyword = any(keyword in lower for keyword in CTA_KEYWORDS)
+
+            lower = stripped.lower()
+            has_cta_keyword = any(keyword in lower for keyword in CTA_KEYWORDS)
             if has_cta_keyword:
                 # Нашли первое предложение с ключевым словом - это начало CTA блока
                 cta_start_index = i
                 break
-    
+
     # Если CTA не найден в последних 5 предложениях, возвращаем исходный текст
     if cta_start_index is None:
         return text
@@ -889,10 +893,12 @@ def _move_cta_to_end(text: str) -> str:
     # (независимо от наличия критериев в последующих предложениях)
     other_sentences = sentences[:cta_start_index]
     cta_sentences = sentences[cta_start_index:]
-    
+
     # Формируем основной текст и CTA блок
-    main_part = " ".join(other_sentences).strip()
-    cta_part = " ".join(cta_sentences).strip()
+    # Сохраняем переносы строк для основного текста (каждое предложение с новой строки)
+    main_part = "\n".join(other_sentences).strip()
+    # CTA блок тоже с переносами строк
+    cta_part = "\n".join(cta_sentences).strip()
 
     if main_part and cta_part:
         return f"{main_part}\n\n{cta_part}"
@@ -1241,7 +1247,7 @@ def _format_llm_response_layout(text: str) -> str:
             restored_sentences.append(restored)
 
         all_sentences = restored_sentences
-        
+
         # Фильтруем предложения: должны начинаться с заглавной буквы или цифры
         # (исключаем пустые строки и строки с "—", которые уже обработаны)
         filtered_sentences = []
@@ -1249,12 +1255,12 @@ def _format_llm_response_layout(text: str) -> str:
             if not sentence.strip():
                 filtered_sentences.append(sentence)
                 continue
-            
+
             # Проверяем, начинается ли с заглавной буквы или цифры
             first_char = sentence.strip()[0]
             if first_char.isupper() or first_char.isdigit() or '—' in sentence:
                 filtered_sentences.append(sentence)
-        
+
         all_sentences = filtered_sentences
 
     # Объединяем - каждое предложение на отдельной строке
@@ -3378,14 +3384,14 @@ async def _process_faq_query(
             _enhance_layout,  # Защищает строки с "—" маркерами от дальнейших обработок
             _remove_lonely_emojis,
         ]
-        
+
         # Затем обрабатываем блок CTA (в самом конце)
         processing_functions_cta = [
             _move_cta_to_end,  # Переносит CTA в конец
             _ensure_cta_spacing,  # Добавляет пустую строку перед CTA и гарантирует 🎯
             _normalize_cta_block,  # Нормализует блок CTA
         ]
-        
+
         # Применяем обработку основного текста
         for func in processing_functions_main:
             try:
@@ -3395,18 +3401,9 @@ async def _process_faq_query(
             except Exception as func_error:
                 logger.warning(f"Ошибка в функции {func.__name__}: {func_error}")
                 continue
-        
+
         # Применяем обработку CTA блока (в самом конце)
         for func in processing_functions_cta:
-            try:
-                final_answer = func(final_answer) if final_answer else ""
-                if not final_answer:
-                    break
-            except Exception as func_error:
-                logger.warning(f"Ошибка в функции {func.__name__}: {func_error}")
-                continue
-
-        for func in processing_functions:
             try:
                 final_answer = func(final_answer) if final_answer else ""
                 if not final_answer:
@@ -3429,7 +3426,7 @@ async def _process_faq_query(
                 if s and not re.search(r"покупк|предоплат|оплата производится|оформ", s, re.IGNORECASE)
             ]
             if filtered_sentences:
-                final_answer = " ".join(filtered_sentences).strip()
+                final_answer = "\n".join(filtered_sentences).strip()
                 if final_answer:
                     try:
                         final_answer = _move_cta_to_end(final_answer)
